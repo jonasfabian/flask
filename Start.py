@@ -1,5 +1,5 @@
 import mysql.connector
-from flask import Flask, jsonify, request
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_restful import Api
 
@@ -14,11 +14,18 @@ dataBase = mysql.connector.connect(
 )
 
 
-@app.route("/getUsers", methods=['GET'])
+@app.route("/", methods=['GET'])
 def getUserById():
     cursor = dataBase.cursor()
     cursor.execute("SELECT * FROM user WHERE id = %s", (request.args.get('id'),))
-    return jsonify(cursor.fetchone())
+    rv = cursor.fetchall()
+    payload=[]
+    content={}
+    for result in rv:
+        content = {'id': result[0], 'firstName': result[1], 'lastName': result[2], 'email': result[3], 'username': result[4], 'avatarVersion': result[5]}
+        payload.append(content)
+        content = {}
+    return jsonify(payload)
 
 
 if __name__ == '__main__':
