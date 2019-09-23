@@ -2,8 +2,10 @@ import mysql.connector
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_restful import Api
+from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
+bcrypt = Bcrypt(app)
 api = Api(app)
 CORS(app)
 dataBase = mysql.connector.connect(
@@ -44,6 +46,16 @@ def getTextAudioIndexes():
         payload.append(content)
         content = {}
     return jsonify(payload)
+
+
+@app.route("/createUser", methods=['POST'])
+def createUser():
+    pw = bcrypt.generate_password_hash(request.json['password']).decode('utf-8')
+    cursor.execute(
+        "INSERT INTO user(id, firstName, lastName, email, username, avatarVersion, password) VALUES(%s, %s, %s, %s, %s, %s, %s)",
+        (request.json['id'], request.json['firstName'], request.json['lastName'], request.json['email'], request.json['username'], request.json['avatarVersion'], pw))
+    dataBase.commit()
+    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
 if __name__ == '__main__':
