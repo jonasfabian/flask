@@ -1,2 +1,1 @@
-# myFlask
-RestAPI with Flask
+# Flask
