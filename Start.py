@@ -141,7 +141,7 @@ def userAndTextAudioIndex():
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
-# Get a textAudioIndex
+# Get a textAudioIndex by user
 @app.route("/getUserAndTextAudioIndexByUser", methods=['GET'])
 def getUserAndTextAudioIndexByUser():
     cursor.execute(
@@ -155,6 +155,23 @@ def getUserAndTextAudioIndexByUser():
             'id': result[0], 'samplingRate': result[1], 'textStartPos': result[2], 'textEndPos': result[3],
             'audioStartPos': result[4], 'audioEndPos': result[5], 'speakerKey': result[6], 'labeled': result[6],
             'correct': result[7], 'wrong': result[8], 'transcript_file_id': result[9]
+        }
+        payload.append(content)
+        content = {}
+    return jsonify(payload)
+
+
+# Get top five users by labeling amount
+@app.route("/getTopFive", methods=['GET'])
+def getTopFiveUsersByLabelCount():
+    cursor.execute(
+        "SELECT user.id, user.username, count(userAndTextAudioIndex.userId) FROM userAndTextAudioIndex JOIN user ON user.id = userAndTextAudioIndex.userId GROUP BY user.id LIMIT 5")
+    rv = cursor.fetchall()
+    payload = []
+    content = {}
+    for result in rv:
+        content = {
+            'id': result[0], 'username': result[1], 'count': result[2]
         }
         payload.append(content)
         content = {}
