@@ -17,6 +17,17 @@ dataBase = mysql.connector.connect(
 cursor = dataBase.cursor()
 
 
+@app.route("/createUser", methods=['POST'])
+def createUser():
+    pw = bcrypt.generate_password_hash(request.json['password']).decode('utf-8')
+    cursor.execute(
+        "INSERT INTO user(id, firstName, lastName, email, username, avatarVersion, password) VALUES(%s, %s, %s, %s, %s, %s, %s)",
+        (request.json['id'], request.json['firstName'], request.json['lastName'], request.json['email'],
+         request.json['username'], request.json['avatarVersion'], pw))
+    dataBase.commit()
+    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+
+
 @app.route("/getUser", methods=['GET'])
 def getUserById():
     cursor.execute("SELECT * FROM user WHERE id = %s", (request.args.get('id'),))
@@ -29,6 +40,24 @@ def getUserById():
         payload.append(content)
         content = {}
     return jsonify(payload)
+
+
+@app.route("/updateUser", methods=['PUT'])
+def updateUser():
+    pw = bcrypt.generate_password_hash(request.json['password'])
+    cursor.execute(
+        "UPDATE user SET firstName = %s, lastName = %s, email = %s, username = %s, avatarVersion = %s, password = %s WHERE id = %s",
+        (request.json['firstName'], request.json['lastName'], request.json['email'],
+         request.json['username'], request.json['avatarVersion'], pw, request.json['id']))
+    dataBase.commit()
+    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+
+
+@app.route("/deleteUser", methods=['DELETE'])
+def deleteUser():
+    cursor.execute("DELETE FROM user WHERE id = %s", (1,))
+    dataBase.commit()
+    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
 @app.route("/getTextAudioIndexes", methods=['GET'])
@@ -46,16 +75,6 @@ def getTextAudioIndexes():
         payload.append(content)
         content = {}
     return jsonify(payload)
-
-
-@app.route("/createUser", methods=['POST'])
-def createUser():
-    pw = bcrypt.generate_password_hash(request.json['password']).decode('utf-8')
-    cursor.execute(
-        "INSERT INTO user(id, firstName, lastName, email, username, avatarVersion, password) VALUES(%s, %s, %s, %s, %s, %s, %s)",
-        (request.json['id'], request.json['firstName'], request.json['lastName'], request.json['email'], request.json['username'], request.json['avatarVersion'], pw))
-    dataBase.commit()
-    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
 if __name__ == '__main__':
