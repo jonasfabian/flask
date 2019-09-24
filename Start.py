@@ -17,6 +17,7 @@ dataBase = mysql.connector.connect(
 cursor = dataBase.cursor()
 
 
+# Create a user
 @app.route("/createUser", methods=['POST'])
 def createUser():
     pw = bcrypt.generate_password_hash(request.json['password']).decode('utf-8')
@@ -28,6 +29,7 @@ def createUser():
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
+# Get a user
 @app.route("/getUser", methods=['GET'])
 def getUserById():
     cursor.execute("SELECT * FROM user WHERE id = %s", (request.args.get('id'),))
@@ -42,6 +44,7 @@ def getUserById():
     return jsonify(payload)
 
 
+# Update a user
 @app.route("/updateUser", methods=['PUT'])
 def updateUser():
     pw = bcrypt.generate_password_hash(request.json['password'])
@@ -53,16 +56,30 @@ def updateUser():
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
+# Delete a user
 @app.route("/deleteUser", methods=['DELETE'])
 def deleteUser():
-    cursor.execute("DELETE FROM user WHERE id = %s", (1,))
+    cursor.execute("DELETE FROM user WHERE id = %s", (request.args.get('id'),))
     dataBase.commit()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
-@app.route("/getTextAudioIndexes", methods=['GET'])
+# Create a textAudioIndex
+@app.route("/createTextAudioIndex", methods=['POST'])
+def createTextAudioIndex():
+    cursor.execute(
+        "INSERT INTO textAudioIndex(samplingRate, textStartPos, textEndPos, audioStartPos, audioEndPos, speakerKey, labeled, correct, wrong, transcript_file_id) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+        (request.json['samplingRate'], request.json['textStartPos'], request.json['textEndPos'],
+         request.json['audioStartPos'], request.json['audioEndPos'], request.json['speakerKey'],
+         request.json['labeled'], request.json['correct'], request.json['wrong'], request.json['transcript_file_id']))
+    dataBase.commit()
+    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+
+
+# Get a textAudioIndex
+@app.route("/getTextAudioIndex", methods=['GET'])
 def getTextAudioIndexes():
-    cursor.execute("SELECT * FROM textAudioIndex")
+    cursor.execute("SELECT * FROM textAudioIndex WHERE id = %s", (request.args.get('id'),))
     rv = cursor.fetchall()
     payload = []
     content = {}
@@ -75,6 +92,27 @@ def getTextAudioIndexes():
         payload.append(content)
         content = {}
     return jsonify(payload)
+
+
+# Update a textAudioIndex
+@app.route("/updateTextAudioIndex", methods=['PUT'])
+def updateTextAudioIndex():
+    cursor.execute(
+        "INSERT INTO textAudioIndex(samplingRate, textStartPos, textEndPos, audioStartPos, audioEndPos, speakerKey, labeled, correct, wrong, transcript_file_id) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) WHERE id = %s",
+        (request.json['samplingRate'], request.json['textStartPos'], request.json['textEndPos'],
+         request.json['audioStartPos'], request.json['audioEndPos'], request.json['speakerKey'],
+         request.json['labeled'], request.json['correct'], request.json['wrong'], request.json['transcript_file_id'],
+         request.json['id']))
+    dataBase.commit()
+    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+
+
+# Delete a textAudioIndex
+@app.route("/deleteTextAudioIndex", methods=['DELETE'])
+def deleteTextAudioIndex():
+    cursor.execute("DELETE FROM textAudioIndex WHERE id = %s", (request.args.get('id'),))
+    dataBase.commit()
+    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
 if __name__ == '__main__':
