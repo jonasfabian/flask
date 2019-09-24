@@ -1,5 +1,6 @@
 import mysql.connector
 import User
+from datetime import datetime
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_login import LoginManager
@@ -128,6 +129,36 @@ def deleteTextAudioIndex():
     cursor.execute("DELETE FROM textAudioIndex WHERE id = %s", (request.args.get('id'),))
     dataBase.commit()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+
+
+# Create a userAndTextAudioIndex
+@app.route("/createUserAndTextAudioIndex", methods=['POST'])
+def userAndTextAudioIndex():
+    cursor.execute(
+        "INSERT INTO userAndTextAudioIndex(userId, textAudioIndexId, time) VALUES(%s, %s, %s)",
+        (request.json['userId'], request.json['textAudioIndexId'], datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    dataBase.commit()
+    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+
+
+# Get a textAudioIndex
+@app.route("/getUserAndTextAudioIndexByUser", methods=['GET'])
+def getUserAndTextAudioIndexByUser():
+    cursor.execute(
+        "SELECT textAudioIndex.* FROM textAudioIndex JOIN userAndTextAudioIndex ON textAudioIndex.id = userAndTextAudioIndex.textAudioIndexId AND userAndTextAudioIndex.userId = %s",
+        (request.args.get('id'),))
+    rv = cursor.fetchall()
+    payload = []
+    content = {}
+    for result in rv:
+        content = {
+            'id': result[0], 'samplingRate': result[1], 'textStartPos': result[2], 'textEndPos': result[3],
+            'audioStartPos': result[4], 'audioEndPos': result[5], 'speakerKey': result[6], 'labeled': result[6],
+            'correct': result[7], 'wrong': result[8], 'transcript_file_id': result[9]
+        }
+        payload.append(content)
+        content = {}
+    return jsonify(payload)
 
 
 if __name__ == '__main__':
