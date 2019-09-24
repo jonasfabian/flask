@@ -1,12 +1,20 @@
 import mysql.connector
+import User
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flask_login import LoginManager
 from flask_restful import Api
 from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
-bcrypt = Bcrypt(app)
 api = Api(app)
+app.secret_key = b'myzFrIhsQHIGDWSIHbtIL6QPTGAqvxS5'
+
+loginManager = LoginManager()
+loginManager.init_app(app)
+
+bcrypt = Bcrypt(app)
+
 CORS(app)
 dataBase = mysql.connector.connect(
     host='localhost',
@@ -15,6 +23,13 @@ dataBase = mysql.connector.connect(
     database='labeling-tool'
 )
 cursor = dataBase.cursor()
+
+
+@app.route("/authenticated", methods=['POST'])
+def authenticated():
+    user = User
+    return jsonify(
+        {'Authenticated': user.User.is_authenticated(app, bcrypt, request.json['username'], request.json['password'])})
 
 
 # Create a user
