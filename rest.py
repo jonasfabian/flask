@@ -1,5 +1,5 @@
 import mysql.connector
-import User
+import user
 from datetime import datetime
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -28,9 +28,9 @@ cursor = dataBase.cursor()
 
 @app.route("/authenticated", methods=['POST'])
 def authenticated():
-    user = User
+    userr = user
     return jsonify(
-        {'Authenticated': user.User.is_authenticated(app, bcrypt, request.json['username'], request.json['password'])})
+        {'Authenticated': userr.User.is_authenticated(app, bcrypt, request.json['username'], request.json['password'])})
 
 
 # Create a user
