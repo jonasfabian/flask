@@ -167,6 +167,7 @@ def getTopFiveUsersByLabelCount():
     cursor.execute(
         "SELECT user.id, user.username, count(userAndTextAudioIndex.userId) FROM userAndTextAudioIndex JOIN user ON user.id = userAndTextAudioIndex.userId GROUP BY user.id LIMIT 5")
     rv = cursor.fetchall()
+    print(rv)
     payload = []
     content = {}
     for result in rv:
@@ -175,6 +176,41 @@ def getTopFiveUsersByLabelCount():
         }
         payload.append(content)
         content = {}
+    return jsonify(payload)
+
+
+# Get ten not yet labeled textAudioIndexes by user
+@app.route("/getTen", methods=['GET'])
+def getTenNonLabeledDataIndexesByUser():
+    cursor.execute(
+        "SELECT textAudioIndex.id FROM textAudioIndex JOIN userAndTextAudioIndex ON userAndTextAudioIndex.textAudioIndexId = textAudioIndex.id AND userAndTextAudioIndex.userId = %s",
+        (request.args.get('id'),))
+    ids = cursor.fetchall()
+    payload = []
+    content = {}
+    for id in ids:
+        cursor.execute(
+            "SELECT textAudioIndex.id, "
+            "textAudioIndex.samplingRate, "
+            "textAudioIndex.textStartPos, "
+            "textAudioIndex.textEndPos, "
+            "textAudioIndex.audioStartPos, "
+            "textAudioIndex.audioEndPos, "
+            "textAudioIndex.speakerKey, "
+            "textAudioIndex.labeled, "
+            "textAudioIndex.correct, "
+            "textAudioIndex.wrong, "
+            "transcript.fileId, "
+            "transcript.text FROM textAudioIndex "
+            "JOIN transcript ON textAudioIndex.transcript_file_id = transcript.fileId WHERE textAudioIndex.id != %s LIMIT 10",
+            (id[0],))
+        vi = cursor.fetchall()
+        content = {
+            'id': vi[0][0], 'samplingRate': vi[0][1], 'textStartPos': vi[0][2], 'textEndPos': vi[0][3], 'audioStartPos': vi[0][4], 'audioEndPos': vi[0][5], 'speakerKey': vi[0][6], 'labeled': vi[0][7], 'correct': vi[0][8], 'wrong': vi[0][9], 'fileId': vi[0][10], 'text': vi[0][11]
+        }
+        payload.append(content)
+        content = {}
+    print(payload)
     return jsonify(payload)
 
 
