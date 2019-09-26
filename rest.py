@@ -213,7 +213,18 @@ def getTextAudioIndexesByLabeledType():
 @app.route("/updateTextAudioIndex", methods=['PUT'])
 def updateTextAudioIndex():
     cursor.execute(
-        "INSERT INTO textAudioIndex(samplingRate, textStartPos, textEndPos, audioStartPos, audioEndPos, speakerKey, labeled, correct, wrong, transcript_file_id) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) WHERE id = %s",
+        """INSERT INTO textAudioIndex(
+        samplingRate,
+        textStartPos,
+        textEndPos,
+        audioStartPos,
+        audioEndPos,
+        speakerKey,
+        labeled,
+        correct,
+        wrong,
+        transcript_file_id
+        ) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) WHERE id = %s""",
         (request.json['samplingRate'], request.json['textStartPos'], request.json['textEndPos'],
          request.json['audioStartPos'], request.json['audioEndPos'], request.json['speakerKey'],
          request.json['labeled'], request.json['correct'], request.json['wrong'], request.json['transcript_file_id'],
@@ -314,6 +325,7 @@ def getTenNonLabeledDataIndexesByUser():
     print(payload)
     return jsonify(payload)
 
+
 # Get Transcripts
 @app.route("/getTranscripts", methods=['GET'])
 def getTranscripts():
@@ -329,6 +341,7 @@ def getTranscripts():
         content = {}
     return jsonify(payload)
 
+
 # Get Transcript by Id
 @app.route("/getTranscript", methods=['GET'])
 def getTranscriptById():
@@ -343,6 +356,7 @@ def getTranscriptById():
         payload.append(content)
         content = {}
     return jsonify(payload)
+
 
 # Get Transcript by Id
 @app.route("/getAudio", methods=['GET'])

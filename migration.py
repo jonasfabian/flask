@@ -4,6 +4,8 @@ import spacy
 from mutagen.mp3 import MP3
 
 # Setup DB-Connection
+from snippet import Snippet
+
 dataBase = mariadb.connect(
     host='localhost',
     user='root',
@@ -57,6 +59,11 @@ def extractDataToDB(folderNumber: str):
     doc = nlp(data)
     file.close()
     fileLength = len(data)
+
+    sql = "INSERT INTO transcript (text, fileId) VALUES (%s, %s)"
+    val = (data, folderNumber)
+    cursor.execute(sql, val)
+    dataBase.commit()
 
     lengthArray = []
 
