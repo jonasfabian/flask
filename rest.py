@@ -1,7 +1,7 @@
 import mysql.connector
 import user
 from datetime import datetime
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_login import LoginManager
 from flask_restful import Api
@@ -383,6 +383,12 @@ def getAudio():
         payload.append(content)
         content = {}
     return jsonify(payload)
+
+# Get audio file
+@app.route("/getAudioFile", methods=['GET'])
+def getAudioFile():
+    path = "/home/jonas/Documents/DeutschAndreaErzaehlt/" + request.args.get('fileId')
+    return send_from_directory(path, 'audio.mp3')
 
 
 if __name__ == '__main__':
