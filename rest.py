@@ -396,11 +396,18 @@ def getAudioFile():
 # Create avatar
 @app.route("/createAvatar", methods=['GET'])
 def createAvatar():
-    cursor.execute("DELETE FROM avatar WHERE avatar.userId = %s", (1,))
+    cursor.execute("DELETE FROM avatar WHERE avatar.userId = %s", (request.json['userId'],))
     dataBase.commit()
     cursor.execute("INSERT INTO avatar(userId, avatar) VALUES(%s, %s)",
                    (request.json['userId'], request.json['avatar'],))
     dataBase.commit()
+
+# Get avatar
+@app.route("/getAvatar", methods=['GET'])
+def getAvatar():
+    cursor.execute("SELECT FROM avatar WHERE avatar.userId = %s", (request.args.get('userId'),))
+    avatar = cursor.fetchall()
+    return jsonify(avatar)
 
 
 if __name__ == '__main__':
