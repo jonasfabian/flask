@@ -326,6 +326,17 @@ def getTenNonLabeledDataIndexesByUser():
     return jsonify(payload)
 
 
+# Get sums of labeled
+@app.route("/getLabeledSums", methods=['GET'])
+def getLabeledSums():
+    cursor.execute("SELECT COUNT(textAudioIndex.id) FROM textAudioIndex WHERE textAudioIndex.correct != 0")
+    correct = cursor.fetchone()
+    cursor.execute("SELECT COUNT(textAudioIndex.id) FROM textAudioIndex WHERE textAudioIndex.wrong != 0")
+    wrong = cursor.fetchone()
+    cursor.execute("SELECT COUNT(textAudioIndex.id) FROM textAudioIndex")
+    totalTextAudioIndexes = cursor.fetchone()
+    return jsonify({'correct': correct[0], 'wrong': wrong[0], 'total': totalTextAudioIndexes[0]})
+
 # Get Transcripts
 @app.route("/getTranscripts", methods=['GET'])
 def getTranscripts():
