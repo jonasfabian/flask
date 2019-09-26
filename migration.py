@@ -87,8 +87,14 @@ def extractDataToDB(folderNumber: str):
 
     # Get Audiofile
     audio = MP3('/home/jonas/Documents/DeutschAndreaErzaehlt/' + folderNumber + '/audio.mp3')
+    path = '/home/jonas/Documents/DeutschAndreaErzaehlt/' + folderNumber + '/audio.mp3'
     audioFileLength = audio.info.length
     samplingRate = audio.info.sample_rate
+
+    sql = "INSERT INTO audio (path, fileId) VALUES (%s, %s)"
+    val = (path, folderNumber)
+    cursor.execute(sql, val)
+    dataBase.commit()
 
     pos = 0
 
