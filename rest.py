@@ -337,6 +337,7 @@ def getLabeledSums():
     totalTextAudioIndexes = cursor.fetchone()
     return jsonify({'correct': correct[0], 'wrong': wrong[0], 'total': totalTextAudioIndexes[0]})
 
+
 # Get Transcripts
 @app.route("/getTranscripts", methods=['GET'])
 def getTranscripts():
@@ -384,11 +385,22 @@ def getAudio():
         content = {}
     return jsonify(payload)
 
+
 # Get audio file
 @app.route("/getAudioFile", methods=['GET'])
 def getAudioFile():
     path = "/home/jonas/Documents/DeutschAndreaErzaehlt/" + request.args.get('fileId')
     return send_from_directory(path, 'audio.mp3')
+
+
+# Create avatar
+@app.route("/createAvatar", methods=['GET'])
+def createAvatar():
+    cursor.execute("DELETE FROM avatar WHERE avatar.userId = %s", (1,))
+    dataBase.commit()
+    cursor.execute("INSERT INTO avatar(userId, avatar) VALUES(%s, %s)",
+                   (request.json['userId'], request.json['avatar'],))
+    dataBase.commit()
 
 
 if __name__ == '__main__':
