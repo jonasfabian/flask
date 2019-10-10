@@ -38,10 +38,10 @@ class Snippet:
 def searchDirectories():
     print('Loading...')
     fileEndings = []
-    entries = os.scandir('/home/jonas/Documents/DeutschAndreaErzaehlt/')
+    entries = os.scandir('C:\\Users\\Jonas\\Documents\\DeutschAndreaErzaehlt')
     for entry in entries:
-        for fileData in os.listdir('/home/jonas/Documents/DeutschAndreaErzaehlt/' + entry.name):
-            print(fileData)
+        print(entry.name)
+        for fileData in os.listdir('C:\\Users\\Jonas\\Documents\\DeutschAndreaErzaehlt\\' + entry.name):
             if fileData.endswith(".txt"):
                 fileEndings.append(entry.name)
                 extractDataToDB(entry.name)
@@ -53,7 +53,7 @@ def searchDirectories():
 def extractDataToDB(folderNumber: str):
     global index
 
-    file = open('/home/jonas/Documents/DeutschAndreaErzaehlt/' + folderNumber + '/transcript.txt')
+    file = open('C:\\Users\\Jonas\\Documents\\DeutschAndreaErzaehlt\\' + folderNumber + '\\transcript.txt')
     data = file.read()
     nlp = spacy.load("de_core_news_sm")
     doc = nlp(data)
@@ -86,8 +86,8 @@ def extractDataToDB(folderNumber: str):
     # ---------------------
 
     # Get Audiofile
-    audio = MP3('/home/jonas/Documents/DeutschAndreaErzaehlt/' + folderNumber + '/audio.mp3')
-    path = '/home/jonas/Documents/DeutschAndreaErzaehlt/' + folderNumber + '/audio.mp3'
+    audio = MP3('C:\\Users\\Jonas\\Documents\\DeutschAndreaErzaehlt\\' + folderNumber + '\\audio.mp3')
+    path = 'C:\\Users\\Jonas\\Documents\\DeutschAndreaErzaehlt\\' + folderNumber + '\\audio.mp3'
     audioFileLength = audio.info.length
     samplingRate = audio.info.sample_rate
 

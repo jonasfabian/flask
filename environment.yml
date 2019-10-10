@@ -1,0 +1,54 @@
+name: flask
+channels:
+  - defaults
+dependencies:
+  - ca-certificates=2019.8.28=0
+  - certifi=2019.9.11=py37_0
+  - openssl=1.1.1d=he774522_2
+  - pip=19.2.3=py37_0
+  - python=3.7.4=h5263a28_0
+  - setuptools=41.4.0=py37_0
+  - sqlite=3.30.0=he774522_0
+  - vc=14.1=h0510ff6_4
+  - vs2015_runtime=14.16.27012=hf0eaf9b_0
+  - wheel=0.33.6=py37_0
+  - wincertstore=0.2=py37_0
+  - pip:
+    - aniso8601==8.0.0
+    - bcrypt==3.1.7
+    - blis==0.2.4
+    - cffi==1.12.3
+    - chardet==3.0.4
+    - click==7.0
+    - cymem==2.0.2
+    - de-core-news-sm==2.1.0
+    - en-core-web-sm==2.1.0
+    - flask==1.1.1
+    - flask-api==1.1
+    - flask-bcrypt==0.7.1
+    - flask-cors==3.0.8
+    - flask-login==0.4.1
+    - flask-restful==0.3.7
+    - idna==2.8
+    - itsdangerous==1.1.0
+    - jinja2==2.10.1
+    - markupsafe==1.1.0
+    - murmurhash==1.0.2
+    - mutagen==1.42.0
+    - mysql-connector==2.2.9
+    - numpy==1.17.2
+    - plac==0.9.6
+    - preshed==2.0.1
+    - pycparser==2.19
+    - pytz==2019.2
+    - requests==2.22.0
+    - six==1.12.0
+    - spacy==2.1.8
+    - srsly==0.1.0
+    - thinc==7.0.8
+    - tqdm==4.36.1
+    - urllib3==1.25.6
+    - wasabi==0.2.2
+    - werkzeug==0.16.0
+prefix: C:\Users\Jonas\Anaconda3\envs\flask
+
