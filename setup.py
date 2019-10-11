@@ -36,6 +36,15 @@ def createTables():
         PRIMARY KEY (id))""")
 
     cursor.execute(
+        """CREATE TABLE IF NOT EXISTS textSnippets (
+        id BIGINT NOT NULL AUTO_INCREMENT,
+        speakerId VARCHAR(45),
+        start VARCHAR(45),
+        end VARCHAR(45),
+        text TEXT,
+        PRIMARY KEY (id))""")
+
+    cursor.execute(
         """CREATE TABLE IF NOT EXISTS speaker (
         id BIGINT NOT NULL AUTO_INCREMENT,
         speakerId VARCHAR(45),
