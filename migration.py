@@ -21,6 +21,20 @@ def searchDirectories():
     print('Done!')
 
 
+class AudioItem:
+    id = 0
+    timelineId = ''
+    time = 0
+
+
+class TextItem:
+    id = 0
+    speakerId = ''
+    sex = ''
+    languageUsed = ''
+    dialect = ''
+
+
 def extractDataToDB(folderNumber: str):
     file = open('C:\\Users\\Jonas\\Documents\\data\\' + folderNumber + '\\indexes.xml')
     xmldoc = minidom.parse(file)
