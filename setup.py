@@ -53,6 +53,36 @@ def createTables():
         dialect VARCHAR(45),
         PRIMARY KEY (id))""")
 
+    cursor.execute(
+        """CREATE TABLE IF NOT EXISTS user (
+        id BIGINT NOT NULL AUTO_INCREMENT,
+        firstName VARCHAR (100),
+        lastName VARCHAR (100),
+        email VARCHAR (100),
+        username VARCHAR(100),
+        avatarVersion INT,
+        password VARCHAR (100),
+        PRIMARY KEY (id),
+        UNIQUE KEY email (email))""")
+
+    cursor.execute(
+        """CREATE TABLE IF NOT EXISTS avatar (
+        id BIGINT NOT NULL AUTO_INCREMENT,
+        userId INT,
+        avatar BLOB,
+        PRIMARY KEY (id),
+        UNIQUE KEY userId (userId))""")
+
+    cursor.execute(
+        """CREATE TABLE IF NOT EXISTS userAndTextAudioIndex (
+        id BIGINT NOT NULL AUTO_INCREMENT,
+        userId INT,
+        textAudioIndexId INT,
+        time TIMESTAMP,
+        PRIMARY KEY (id),
+        CONSTRAINT uni UNIQUE (userId, textAudioIndexId))""")
+
+
 def main():
     dropDatabase()
     createDatabase()
