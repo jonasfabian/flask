@@ -46,12 +46,12 @@ def extractDataToDB(folderNumber: str):
         dataBase.commit()
     textItemList = xmldoc.getElementsByTagName('tier')
     for textItem in textItemList:
-        speaker = 'unknown'
         if textItem.hasAttribute('speaker'):
             speaker = textItem.attributes['id'].value
             for event in textItem.getElementsByTagName('event'):
                 cursor.execute("INSERT INTO textSnippets (speakerId, start, end, text) VALUES (%s, %s, %s, %s)", (
-                speaker, event.attributes['start'].value, event.attributes['end'].value, event.firstChild.nodeValue))
+                    speaker, event.attributes['start'].value, event.attributes['end'].value,
+                    event.firstChild.nodeValue))
                 dataBase.commit()
 
 
