@@ -27,11 +27,11 @@ dataBase = mysql.connector.connect(
 cursor = dataBase.cursor()
 
 
-@app.route("/authenticated", methods=['POST'])
-def authenticated():
+@app.route("/checkLogin", methods=['POST'])
+def checkLogin():
     userr = user
     return jsonify(
-        {'Authenticated': userr.User.is_authenticated(app, bcrypt, request.json['username'], request.json['password'])})
+        {'Authenticated': userr.User.is_authenticated(app, bcrypt, request.json['email'], request.json['password'])})
 
 
 # Create a user
@@ -39,9 +39,9 @@ def authenticated():
 def createUser():
     pw = bcrypt.generate_password_hash(request.json['password']).decode('utf-8')
     cursor.execute(
-        "INSERT INTO user(id, firstName, lastName, email, username, avatarVersion, password) VALUES(%s, %s, %s, %s, %s, %s, %s)",
+        "INSERT INTO user(id, firstName, lastName, email, username, avatarVersion, password, canton) VALUES(%s, %s, %s, %s, %s, %s, %s, %s)",
         (request.json['id'], request.json['firstName'], request.json['lastName'], request.json['email'],
-         request.json['username'], request.json['avatarVersion'], pw))
+         request.json['username'], request.json['avatarVersion'], pw, request.json['canton']))
     dataBase.commit()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 

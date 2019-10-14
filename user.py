@@ -13,7 +13,7 @@ class User:
         self.username = username
         self.avatarVersion = avatarVersion
 
-    def is_authenticated(app: Flask(__name__), bcrypt: Bcrypt, username: str, password: str) -> bool:
+    def is_authenticated(app: Flask(__name__), bcrypt: Bcrypt, email: str, password: str) -> bool:
         CORS(app)
         dataBase = mysql.connector.connect(
             host='localhost',
@@ -22,7 +22,7 @@ class User:
             database='labeling-tool'
         )
         cursor = dataBase.cursor()
-        cursor.execute("SELECT * FROM user WHERE username = %s", (username,))
+        cursor.execute("SELECT * FROM user WHERE email = %s", (email,))
         rv = cursor.fetchall()
         for res in rv:
             return bcrypt.check_password_hash(res[6], password)
