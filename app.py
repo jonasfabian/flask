@@ -51,14 +51,10 @@ def createUser():
 def getUserById():
     cursor.execute("SELECT * FROM user WHERE id = %s", (request.args.get('id'),))
     rv = cursor.fetchall()
-    payload = []
-    content = {}
     for result in rv:
         content = {'id': result[0], 'firstName': result[1], 'lastName': result[2], 'email': result[3],
                    'username': result[4], 'avatarVersion': result[5]}
-        payload.append(content)
-        content = {}
-    return jsonify(payload)
+    return jsonify(content)
 
 
 # Get a user by username
@@ -66,14 +62,10 @@ def getUserById():
 def getUserByUsername():
     cursor.execute("SELECT * FROM user WHERE username = %s", (request.args.get('username'),))
     rv = cursor.fetchall()
-    payload = []
-    content = {}
     for result in rv:
         content = {'id': result[0], 'firstName': result[1], 'lastName': result[2], 'email': result[3],
                    'username': result[4], 'avatarVersion': result[5]}
-        payload.append(content)
-        content = {}
-    return jsonify(payload)
+    return jsonify(content)
 
 
 # Get a user by email
@@ -81,14 +73,10 @@ def getUserByUsername():
 def getUserByEmail():
     cursor.execute("SELECT * FROM user WHERE email = %s", (request.args.get('email'),))
     rv = cursor.fetchall()
-    payload = []
-    content = {}
     for result in rv:
         content = {'id': result[0], 'firstName': result[1], 'lastName': result[2], 'email': result[3],
                    'username': result[4], 'avatarVersion': result[5]}
-        payload.append(content)
-        content = {}
-    return jsonify(payload)
+    return jsonify(content)
 
 
 # Get top five users by amount of labeled instances
