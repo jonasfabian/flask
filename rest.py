@@ -1,5 +1,5 @@
 import mysql.connector
-import user
+from types import user
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS

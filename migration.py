@@ -1,6 +1,9 @@
 import mysql.connector as mariadb
 import os
 from xml.dom import minidom
+from audio import AudioSnippet
+from speaker import Speaker
+from textSnippet import TextSnippet
 
 dataBase = mariadb.connect(
     host='localhost',
@@ -21,51 +24,57 @@ def searchDirectories():
     print('Done!')
 
 
-class AudioItem:
-    id = 0
-    timelineId = ''
-    time = 0
-
-
-class TextItem:
-    id = 0
-    speakerId = ''
-    sex = ''
-    languageUsed = ''
-    dialect = ''
-
-
 def extractDataToDB(folderNumber: str):
     file = open('C:\\Users\\Jonas\\Documents\\data\\' + folderNumber + '\\indexes.xml')
     xmldoc = minidom.parse(file)
+    # AudioSnippet
     audioItemList = xmldoc.getElementsByTagName('tli')
     for s in audioItemList:
+        audioSnippet = AudioSnippet
+        audioSnippet.timelineId = s.attributes['id'].value
+        audioSnippet.time = s.attributes['time'].value
         query = "INSERT INTO audioSnippets (timelineId, time) VALUES (%s, %s)"
-        values = (s.attributes['id'].value, s.attributes['time'].value)
-        cursor.execute(query, values)
+        cursor.execute(query, (
+            audioSnippet.timelineId,
+            audioSnippet.time
+        ))
         dataBase.commit()
+    # Speaker
     speakerItemList = xmldoc.getElementsByTagName('speaker')
-    for speaker in speakerItemList:
-        speakerId = speaker.attributes['id'].value
-        sex = speaker.getElementsByTagName('sex')[0].attributes['value'].value
-        lang = speaker.getElementsByTagName('language')[0].attributes['lang'].value
-        dialect = 'CH'
-        dialectElement = speaker.getElementsByTagName('ud-speaker-information')[0].getElementsByTagName(
+    for sp in speakerItemList:
+        speaker = Speaker
+        speaker.speakerId = sp.attributes['id'].value
+        speaker.sex = sp.getElementsByTagName('sex')[0].attributes['value'].value
+        speaker.languageUsed = sp.getElementsByTagName('language')[0].attributes['lang'].value
+        speaker.dialect = '-'
+        dialectElement = sp.getElementsByTagName('ud-speaker-information')[0].getElementsByTagName(
             'ud-information')
         if len(dialectElement) > 0:
-            dialect = dialectElement[0].firstChild.nodeValue
+            speaker.dialect = dialectElement[0].firstChild.nodeValue
         query = "INSERT INTO speaker (speakerId, sex, languageUsed, dialect) VALUES (%s, %s, %s, %s)"
-        values = (speakerId, sex, lang, dialect)
-        cursor.execute(query, values)
+        cursor.execute(query, (
+            speaker.speakerId,
+            speaker.sex,
+            speaker.languageUsed,
+            speaker.dialect
+        ))
         dataBase.commit()
+    # TextSnippet
     textItemList = xmldoc.getElementsByTagName('tier')
     for textItem in textItemList:
+        textSnippet = TextSnippet
         if textItem.hasAttribute('speaker'):
-            speaker = textItem.attributes['id'].value
+            textSnippet.speakerId = textItem.attributes['id'].value
             for event in textItem.getElementsByTagName('event'):
+                textSnippet.start = event.attributes['start'].value
+                textSnippet.end = event.attributes['end'].value
+                textSnippet.text = event.firstChild.nodeValue
                 cursor.execute("INSERT INTO textSnippets (speakerId, start, end, text) VALUES (%s, %s, %s, %s)", (
-                    speaker, event.attributes['start'].value, event.attributes['end'].value,
-                    event.firstChild.nodeValue))
+                    textSnippet.speakerId,
+                    textSnippet.start,
+                    textSnippet.end,
+                    textSnippet.text
+                ))
                 dataBase.commit()
 
 
