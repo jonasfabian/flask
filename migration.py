@@ -33,10 +33,11 @@ def extractDataToDB(folderNumber: str):
         audioSnippet = AudioSnippet
         audioSnippet.timelineId = s.attributes['id'].value
         audioSnippet.time = s.attributes['time'].value
-        query = "INSERT INTO audioSnippets (timelineId, time) VALUES (%s, %s)"
+        query = "INSERT INTO audioSnippets (timelineId, time, fileId) VALUES (%s, %s, %s)"
         cursor.execute(query, (
             audioSnippet.timelineId,
-            audioSnippet.time
+            audioSnippet.time,
+            folderNumber
         ))
         dataBase.commit()
     # Speaker
@@ -51,12 +52,13 @@ def extractDataToDB(folderNumber: str):
             'ud-information')
         if len(dialectElement) > 0:
             speaker.dialect = dialectElement[0].firstChild.nodeValue
-        query = "INSERT INTO speaker (speakerId, sex, languageUsed, dialect) VALUES (%s, %s, %s, %s)"
+        query = "INSERT INTO speaker (speakerId, sex, languageUsed, dialect, fileId) VALUES (%s, %s, %s, %s, %s)"
         cursor.execute(query, (
             speaker.speakerId,
             speaker.sex,
             speaker.languageUsed,
-            speaker.dialect
+            speaker.dialect,
+            folderNumber
         ))
         dataBase.commit()
     # TextSnippet
@@ -69,12 +71,14 @@ def extractDataToDB(folderNumber: str):
                 textSnippet.start = event.attributes['start'].value
                 textSnippet.end = event.attributes['end'].value
                 textSnippet.text = event.firstChild.nodeValue
-                cursor.execute("INSERT INTO textSnippets (speakerId, start, end, text) VALUES (%s, %s, %s, %s)", (
-                    textSnippet.speakerId,
-                    textSnippet.start,
-                    textSnippet.end,
-                    textSnippet.text
-                ))
+                cursor.execute(
+                    "INSERT INTO textSnippets (speakerId, start, end, text, fileId) VALUES (%s, %s, %s, %s, %s)", (
+                        textSnippet.speakerId,
+                        textSnippet.start,
+                        textSnippet.end,
+                        textSnippet.text,
+                        folderNumber
+                    ))
                 dataBase.commit()
 
 

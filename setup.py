@@ -33,6 +33,7 @@ def createTables():
         id BIGINT NOT NULL AUTO_INCREMENT,
         timelineId VARCHAR(45),
         time FLOAT NOT NULL,
+        fileId Int NOT NULL,
         PRIMARY KEY (id))""")
 
     cursor.execute(
@@ -42,6 +43,7 @@ def createTables():
         start VARCHAR(45),
         end VARCHAR(45),
         text TEXT,
+        fileId Int NOT NULL,
         PRIMARY KEY (id))""")
 
     cursor.execute(
@@ -51,6 +53,7 @@ def createTables():
         sex VARCHAR(45),
         languageUsed VARCHAR(45),
         dialect VARCHAR(45),
+        fileId Int NOT NULL,
         PRIMARY KEY (id))""")
 
     cursor.execute(
