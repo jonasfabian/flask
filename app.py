@@ -1,11 +1,12 @@
 import mysql.connector
-import user
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_login import LoginManager
 from flask_restful import Api
 from flask_bcrypt import Bcrypt
+
+import user
 
 app = Flask(__name__)
 api = Api(app)
@@ -50,14 +51,10 @@ def createUser():
 def getUserById():
     cursor.execute("SELECT * FROM user WHERE id = %s", (request.args.get('id'),))
     rv = cursor.fetchall()
-    payload = []
-    content = {}
     for result in rv:
         content = {'id': result[0], 'firstName': result[1], 'lastName': result[2], 'email': result[3],
                    'username': result[4], 'avatarVersion': result[5]}
-        payload.append(content)
-        content = {}
-    return jsonify(payload)
+    return jsonify(content)
 
 
 # Get a user by username
@@ -65,14 +62,10 @@ def getUserById():
 def getUserByUsername():
     cursor.execute("SELECT * FROM user WHERE username = %s", (request.args.get('username'),))
     rv = cursor.fetchall()
-    payload = []
-    content = {}
     for result in rv:
         content = {'id': result[0], 'firstName': result[1], 'lastName': result[2], 'email': result[3],
                    'username': result[4], 'avatarVersion': result[5]}
-        payload.append(content)
-        content = {}
-    return jsonify(payload)
+    return jsonify(content)
 
 
 # Get a user by email
@@ -80,14 +73,10 @@ def getUserByUsername():
 def getUserByEmail():
     cursor.execute("SELECT * FROM user WHERE email = %s", (request.args.get('email'),))
     rv = cursor.fetchall()
-    payload = []
-    content = {}
     for result in rv:
         content = {'id': result[0], 'firstName': result[1], 'lastName': result[2], 'email': result[3],
                    'username': result[4], 'avatarVersion': result[5]}
-        payload.append(content)
-        content = {}
-    return jsonify(payload)
+    return jsonify(content)
 
 
 # Get top five users by amount of labeled instances
@@ -125,52 +114,32 @@ def deleteUser():
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
-# Create a textAudioIndex
-@app.route("/createTextAudioIndex", methods=['POST'])
-def createTextAudioIndex():
-    cursor.execute(
-        "INSERT INTO textAudioIndex(samplingRate, textStartPos, textEndPos, audioStartPos, audioEndPos, speakerKey, labeled, correct, wrong, transcript_file_id) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-        (request.json['samplingRate'], request.json['textStartPos'], request.json['textEndPos'],
-         request.json['audioStartPos'], request.json['audioEndPos'], request.json['speakerKey'],
-         request.json['labeled'], request.json['correct'], request.json['wrong'], request.json['transcript_file_id']))
-    dataBase.commit()
-    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
-
-
-# Get a textAudioIndex
-@app.route("/getTextAudioIndex", methods=['GET'])
-def getTextAudioIndex():
-    cursor.execute("SELECT * FROM textAudioIndex WHERE id = %s", (request.args.get('id'),))
+@app.route("/getAudioSnippet", methods=['GET'])
+def getAudioSnippet():
+    cursor.execute("SELECT * FROM audiosnippets WHERE timelineId = %s", (request.args.get('timelineId'),))
     rv = cursor.fetchall()
-    payload = []
-    content = {}
     for result in rv:
-        content = {
-            'id': result[0], 'samplingRate': result[1], 'textStartPos': result[2], 'textEndPos': result[3],
-            'audioStartPos': result[4], 'audioEndPos': result[5], 'speakerKey': result[6], 'labeled': result[6],
-            'correct': result[7], 'wrong': result[8], 'transcript_file_id': result[9]
-        }
-        payload.append(content)
-        content = {}
-    return jsonify(payload)
+        content = {'id': result[0], 'timelineId': result[1], 'time': result[2], 'fileId': result[3]}
+    return jsonify(content)
 
 
-# Get all textAudioIndex
-@app.route("/getTextAudioIndexes", methods=['GET'])
-def getTextAudioIndexes():
-    cursor.execute("SELECT * FROM textAudioIndex")
+@app.route("/getTextSnippet", methods=['GET'])
+def getTextSnippet():
+    cursor.execute("SELECT * FROM textsnippets WHERE id = %s", (request.args.get('id'),))
     rv = cursor.fetchall()
-    payload = []
-    content = {}
     for result in rv:
-        content = {
-            'id': result[0], 'samplingRate': result[1], 'textStartPos': result[2], 'textEndPos': result[3],
-            'audioStartPos': result[4], 'audioEndPos': result[5], 'speakerKey': result[6], 'labeled': result[6],
-            'correct': result[7], 'wrong': result[8], 'transcript_file_id': result[9]
-        }
-        payload.append(content)
-        content = {}
-    return jsonify(payload)
+        content = {'id': result[0], 'speakerId': result[1], 'start': result[2], 'end': result[3], 'text': result[4], 'fileId': result[5]}
+    return jsonify(content)
+
+
+@app.route("/getSpeaker", methods=['GET'])
+def getSpeaker():
+    cursor.execute("SELECT * FROM speaker WHERE speakerId = %s", (request.args.get('speakerId'),))
+    rv = cursor.fetchall()
+    for result in rv:
+        content = {'id': result[0], 'speakerId': result[1], 'sex': result[2], 'languageUsed': result[3],
+                   'dialect': result[4], 'fileId': result[5]}
+    return jsonify(content)
 
 
 # Get ten not yet labeled textAudioIndexes
@@ -209,38 +178,6 @@ def getTextAudioIndexesByLabeledType():
     return jsonify(payload)
 
 
-# Update a textAudioIndex
-@app.route("/updateTextAudioIndex", methods=['PUT'])
-def updateTextAudioIndex():
-    cursor.execute(
-        """INSERT INTO textAudioIndex(
-        samplingRate,
-        textStartPos,
-        textEndPos,
-        audioStartPos,
-        audioEndPos,
-        speakerKey,
-        labeled,
-        correct,
-        wrong,
-        transcript_file_id
-        ) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) WHERE id = %s""",
-        (request.json['samplingRate'], request.json['textStartPos'], request.json['textEndPos'],
-         request.json['audioStartPos'], request.json['audioEndPos'], request.json['speakerKey'],
-         request.json['labeled'], request.json['correct'], request.json['wrong'], request.json['transcript_file_id'],
-         request.json['id']))
-    dataBase.commit()
-    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
-
-
-# Delete a textAudioIndex
-@app.route("/deleteTextAudioIndex", methods=['DELETE'])
-def deleteTextAudioIndex():
-    cursor.execute("DELETE FROM textAudioIndex WHERE id = %s", (request.args.get('id'),))
-    dataBase.commit()
-    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
-
-
 # Create a userAndTextAudioIndex
 @app.route("/createUserAndTextAudioIndex", methods=['POST'])
 def createUserAndTextAudioIndex():
@@ -249,26 +186,6 @@ def createUserAndTextAudioIndex():
         (request.json['userId'], request.json['textAudioIndexId'], datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     dataBase.commit()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
-
-
-# Get a textAudioIndex by user
-@app.route("/getUserAndTextAudioIndexByUser", methods=['GET'])
-def getUserAndTextAudioIndexByUser():
-    cursor.execute(
-        "SELECT textAudioIndex.* FROM textAudioIndex JOIN userAndTextAudioIndex ON textAudioIndex.id = userAndTextAudioIndex.textAudioIndexId AND userAndTextAudioIndex.userId = %s",
-        (request.args.get('id'),))
-    rv = cursor.fetchall()
-    payload = []
-    content = {}
-    for result in rv:
-        content = {
-            'id': result[0], 'samplingRate': result[1], 'textStartPos': result[2], 'textEndPos': result[3],
-            'audioStartPos': result[4], 'audioEndPos': result[5], 'speakerKey': result[6], 'labeled': result[6],
-            'correct': result[7], 'wrong': result[8], 'transcript_file_id': result[9]
-        }
-        payload.append(content)
-        content = {}
-    return jsonify(payload)
 
 
 # Get top five users by labeling amount
@@ -289,43 +206,6 @@ def getTopFiveUsersByLabelCount():
     return jsonify(payload)
 
 
-# Get ten not yet labeled textAudioIndexes by user
-@app.route("/getTenNonLabeledDataIndexesByUser", methods=['GET'])
-def getTenNonLabeledDataIndexesByUser():
-    cursor.execute(
-        "SELECT textAudioIndex.id FROM textAudioIndex JOIN userAndTextAudioIndex ON userAndTextAudioIndex.textAudioIndexId = textAudioIndex.id AND userAndTextAudioIndex.userId = %s",
-        (request.args.get('id'),))
-    ids = cursor.fetchall()
-    payload = []
-    content = {}
-    for id in ids:
-        cursor.execute(
-            "SELECT textAudioIndex.id, "
-            "textAudioIndex.samplingRate, "
-            "textAudioIndex.textStartPos, "
-            "textAudioIndex.textEndPos, "
-            "textAudioIndex.audioStartPos, "
-            "textAudioIndex.audioEndPos, "
-            "textAudioIndex.speakerKey, "
-            "textAudioIndex.labeled, "
-            "textAudioIndex.correct, "
-            "textAudioIndex.wrong, "
-            "transcript.fileId, "
-            "transcript.text FROM textAudioIndex "
-            "JOIN transcript ON textAudioIndex.transcript_file_id = transcript.fileId WHERE textAudioIndex.id != %s LIMIT 10",
-            (id[0],))
-        vi = cursor.fetchall()
-        content = {
-            'id': vi[0][0], 'samplingRate': vi[0][1], 'textStartPos': vi[0][2], 'textEndPos': vi[0][3],
-            'audioStartPos': vi[0][4], 'audioEndPos': vi[0][5], 'speakerKey': vi[0][6], 'labeled': vi[0][7],
-            'correct': vi[0][8], 'wrong': vi[0][9], 'fileId': vi[0][10], 'text': vi[0][11]
-        }
-        payload.append(content)
-        content = {}
-    print(payload)
-    return jsonify(payload)
-
-
 # Get sums of labeled
 @app.route("/getLabeledSums", methods=['GET'])
 def getLabeledSums():
@@ -338,59 +218,11 @@ def getLabeledSums():
     return jsonify({'correct': correct[0], 'wrong': wrong[0], 'total': totalTextAudioIndexes[0]})
 
 
-# Get Transcripts
-@app.route("/getTranscripts", methods=['GET'])
-def getTranscripts():
-    cursor.execute("SELECT * FROM transcript")
-    rv = cursor.fetchall()
-    payload = []
-    content = {}
-    for result in rv:
-        content = {
-            'id': result[0], 'text': result[1], 'fileId': result[2]
-        }
-        payload.append(content)
-        content = {}
-    return jsonify(payload)
-
-
-# Get Transcript by Id
-@app.route("/getTranscript", methods=['GET'])
-def getTranscriptById():
-    cursor.execute("SELECT * FROM transcript WHERE id = %s", (request.args.get('id'),))
-    rv = cursor.fetchall()
-    payload = []
-    content = {}
-    for result in rv:
-        content = {
-            'id': result[0], 'text': result[1], 'fileId': result[2]
-        }
-        payload.append(content)
-        content = {}
-    return jsonify(payload)
-
-
-# Get Transcript by Id
-@app.route("/getAudio", methods=['GET'])
-def getAudio():
-    cursor.execute("SELECT * FROM audio WHERE fileId = %s", (request.args.get('fileId'),))
-    rv = cursor.fetchall()
-    payload = []
-    content = {}
-    for result in rv:
-        content = {
-            'id': result[0], 'path': result[1], 'fileId': result[2]
-        }
-        payload.append(content)
-        content = {}
-    return jsonify(payload)
-
-
 # Get audio file
 @app.route("/getAudioFile", methods=['GET'])
 def getAudioFile():
-    path = "/home/jonas/Documents/DeutschAndreaErzaehlt/" + request.args.get('fileId')
-    return send_from_directory(path, 'audio.mp3')
+    path = "C:\\Users\\Jonas\\Documents\\data\\" + request.args.get('fileId')
+    return send_from_directory(path, 'audio.wav')
 
 
 # Create avatar

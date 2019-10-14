@@ -28,39 +28,34 @@ def createDatabase():
 
 
 def createTables():
-    # Table audio
     cursor.execute(
-        """CREATE TABLE IF NOT EXISTS audio (
+        """CREATE TABLE IF NOT EXISTS audioSnippets (
         id BIGINT NOT NULL AUTO_INCREMENT,
-        path VARCHAR(200),
-        fileId BIGINT NOT NULL,
+        timelineId VARCHAR(45),
+        time FLOAT NOT NULL,
+        fileId Int NOT NULL,
         PRIMARY KEY (id))""")
 
-    # Table audio
     cursor.execute(
-        """CREATE TABLE IF NOT EXISTS textAudioIndex (
+        """CREATE TABLE IF NOT EXISTS textSnippets (
         id BIGINT NOT NULL AUTO_INCREMENT,
-        samplingRate INT,
-        textStartPos INT,
-        textEndPos INT,
-        audioStartPos INT,
-        audioEndPos INT,
-        speakerKey INT,
-        labeled INT default 0,
-        correct INT default 0,
-        wrong INT default 0,
-        transcript_file_id INT,
+        speakerId VARCHAR(45),
+        start VARCHAR(45),
+        end VARCHAR(45),
+        text TEXT,
+        fileId Int NOT NULL,
         PRIMARY KEY (id))""")
 
-    # Table transcript
     cursor.execute(
-        """CREATE TABLE IF NOT EXISTS transcript (
+        """CREATE TABLE IF NOT EXISTS speaker (
         id BIGINT NOT NULL AUTO_INCREMENT,
-        text MEDIUMTEXT CHARACTER SET utf8,
-        fileId BIGINT NOT NULL,
+        speakerId VARCHAR(45),
+        sex VARCHAR(45),
+        languageUsed VARCHAR(45),
+        dialect VARCHAR(45),
+        fileId Int NOT NULL,
         PRIMARY KEY (id))""")
 
-    # Table user
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS user (
         id BIGINT NOT NULL AUTO_INCREMENT,
@@ -73,7 +68,14 @@ def createTables():
         PRIMARY KEY (id),
         UNIQUE KEY email (email))""")
 
-    # Table userAndTextAudioIndex
+    cursor.execute(
+        """CREATE TABLE IF NOT EXISTS avatar (
+        id BIGINT NOT NULL AUTO_INCREMENT,
+        userId INT,
+        avatar BLOB,
+        PRIMARY KEY (id),
+        UNIQUE KEY userId (userId))""")
+
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS userAndTextAudioIndex (
         id BIGINT NOT NULL AUTO_INCREMENT,
@@ -82,15 +84,6 @@ def createTables():
         time TIMESTAMP,
         PRIMARY KEY (id),
         CONSTRAINT uni UNIQUE (userId, textAudioIndexId))""")
-
-    # Table avatar
-    cursor.execute(
-        """CREATE TABLE IF NOT EXISTS avatar (
-        id BIGINT NOT NULL AUTO_INCREMENT,
-        userId INT,
-        avatar BLOB,
-        PRIMARY KEY (id),
-        UNIQUE KEY userId (userId))""")
 
 
 def main():

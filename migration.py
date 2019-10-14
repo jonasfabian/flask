@@ -1,10 +1,9 @@
 import mysql.connector as mariadb
 import os
-import spacy
-from mutagen.mp3 import MP3
-
-# Setup DB-Connection
-from snippet import Snippet
+from xml.dom import minidom
+from audio import AudioSnippet
+from speaker import Speaker
+from textSnippet import TextSnippet
 
 dataBase = mariadb.connect(
     host='localhost',
@@ -14,112 +13,74 @@ dataBase = mariadb.connect(
 )
 cursor = dataBase.cursor()
 
-index = 0
-
-
-def clear():
-    cursor.execute("TRUNCATE TABLE textAudioIndex")
-    print("Cleared TextAudioIndex")
-
-
-class Snippet:
-    id = 0
-    samplingRate = 0
-    textLength = 0
-    text = ''
-    textStartPosition = 0
-    textEndPosition = 0
-    percentageTotal = 0
-    audioLength = 0
-    audioStartPosition = 0
-    audioEndPosition = 0
-
 
 def searchDirectories():
     print('Loading...')
-    fileEndings = []
-    entries = os.scandir('C:\\Users\\Jonas\\Documents\\DeutschAndreaErzaehlt')
+    entries = os.scandir('C:\\Users\\Jonas\\Documents\\data')
     for entry in entries:
-        print(entry.name)
-        for fileData in os.listdir('C:\\Users\\Jonas\\Documents\\DeutschAndreaErzaehlt\\' + entry.name):
-            if fileData.endswith(".txt"):
-                fileEndings.append(entry.name)
+        for fileData in os.listdir('C:\\Users\\Jonas\\Documents\\data\\' + entry.name):
+            if fileData.endswith(".xml"):
                 extractDataToDB(entry.name)
     print('Done!')
 
 
-# --------------------------
-
 def extractDataToDB(folderNumber: str):
-    global index
-
-    file = open('C:\\Users\\Jonas\\Documents\\DeutschAndreaErzaehlt\\' + folderNumber + '\\transcript.txt')
-    data = file.read()
-    nlp = spacy.load("de_core_news_sm")
-    doc = nlp(data)
-    file.close()
-    fileLength = len(data)
-
-    sql = "INSERT INTO transcript (text, fileId) VALUES (%s, %s)"
-    val = (data, folderNumber)
-    cursor.execute(sql, val)
-    dataBase.commit()
-
-    lengthArray = []
-
-    # Add Snippet Object to LengthArray
-    for te in [sent.text for sent in doc.sents]:
-        index = index + 1
-        snippet = Snippet()
-
-        snippet.id = index
-        snippet.textLength = len(te)
-        snippet.text = te
-        snippet.percentageTotal = snippet.textLength / fileLength
-
-        lengthArray.append(snippet)
-
-    for element in lengthArray:
-        element.textStartPosition = data.find(element.text)
-        element.textEndPosition = data.find(element.text) + len(element.text)
-
-    # ---------------------
-
-    # Get Audiofile
-    audio = MP3('C:\\Users\\Jonas\\Documents\\DeutschAndreaErzaehlt\\' + folderNumber + '\\audio.mp3')
-    path = 'C:\\Users\\Jonas\\Documents\\DeutschAndreaErzaehlt\\' + folderNumber + '\\audio.mp3'
-    audioFileLength = audio.info.length
-    samplingRate = audio.info.sample_rate
-
-    sql = "INSERT INTO audio (path, fileId) VALUES (%s, %s)"
-    val = (path, folderNumber)
-    cursor.execute(sql, val)
-    dataBase.commit()
-
-    pos = 0
-
-    for u in lengthArray:
-        u.samplingRate = samplingRate
-        u.audioLength = u.percentageTotal * audioFileLength
-        pos = pos + u.audioLength
-        u.audioStartPosition = round(pos * u.samplingRate)
-        u.audioEndPosition = round((pos + u.audioLength) * u.samplingRate)
-
-    # ----------------------
-
-    # Insert values into DB
-    for file in lengthArray:
-        sql = "INSERT INTO textAudioIndex (id, samplingRate, textStartPos, textEndPos, audioStartPos, audioEndPos, speakerKey, labeled, correct, wrong, transcript_file_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        val = (file.id, file.samplingRate, file.textStartPosition, file.textEndPosition, file.audioStartPosition,
-               file.audioEndPosition, 1, 0, 0, 0, folderNumber)
-        cursor.execute(sql, val)
+    file = open('C:\\Users\\Jonas\\Documents\\data\\' + folderNumber + '\\indexes.xml')
+    xmldoc = minidom.parse(file)
+    # AudioSnippet
+    audioItemList = xmldoc.getElementsByTagName('tli')
+    for s in audioItemList:
+        audioSnippet = AudioSnippet
+        audioSnippet.timelineId = s.attributes['id'].value
+        audioSnippet.time = s.attributes['time'].value
+        query = "INSERT INTO audioSnippets (timelineId, time, fileId) VALUES (%s, %s, %s)"
+        cursor.execute(query, (
+            audioSnippet.timelineId,
+            audioSnippet.time,
+            folderNumber
+        ))
         dataBase.commit()
-
-
-def main():
-    clear()
-    searchDirectories()
+    # Speaker
+    speakerItemList = xmldoc.getElementsByTagName('speaker')
+    for sp in speakerItemList:
+        speaker = Speaker
+        speaker.speakerId = sp.attributes['id'].value
+        speaker.sex = sp.getElementsByTagName('sex')[0].attributes['value'].value
+        speaker.languageUsed = sp.getElementsByTagName('language')[0].attributes['lang'].value
+        speaker.dialect = '-'
+        dialectElement = sp.getElementsByTagName('ud-speaker-information')[0].getElementsByTagName(
+            'ud-information')
+        if len(dialectElement) > 0:
+            speaker.dialect = dialectElement[0].firstChild.nodeValue
+        query = "INSERT INTO speaker (speakerId, sex, languageUsed, dialect, fileId) VALUES (%s, %s, %s, %s, %s)"
+        cursor.execute(query, (
+            speaker.speakerId,
+            speaker.sex,
+            speaker.languageUsed,
+            speaker.dialect,
+            folderNumber
+        ))
+        dataBase.commit()
+    # TextSnippet
+    textItemList = xmldoc.getElementsByTagName('tier')
+    for textItem in textItemList:
+        textSnippet = TextSnippet
+        if textItem.hasAttribute('speaker'):
+            textSnippet.speakerId = textItem.attributes['id'].value
+            for event in textItem.getElementsByTagName('event'):
+                textSnippet.start = event.attributes['start'].value
+                textSnippet.end = event.attributes['end'].value
+                textSnippet.text = event.firstChild.nodeValue
+                cursor.execute(
+                    "INSERT INTO textSnippets (speakerId, start, end, text, fileId) VALUES (%s, %s, %s, %s, %s)", (
+                        textSnippet.speakerId,
+                        textSnippet.start,
+                        textSnippet.end,
+                        textSnippet.text,
+                        folderNumber
+                    ))
+                dataBase.commit()
 
 
 if __name__ == "__main__":
-    main()
+    searchDirectories()
