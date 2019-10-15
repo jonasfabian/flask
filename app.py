@@ -128,7 +128,8 @@ def getTextSnippet():
     cursor.execute("SELECT * FROM textsnippets WHERE id = %s", (request.args.get('id'),))
     rv = cursor.fetchall()
     for result in rv:
-        content = {'id': result[0], 'speakerId': result[1], 'start': result[2], 'end': result[3], 'text': result[4], 'fileId': result[5]}
+        content = {'id': result[0], 'speakerId': result[1], 'start': result[2], 'end': result[3], 'text': result[4],
+                   'fileId': result[5]}
     return jsonify(content)
 
 
@@ -218,13 +219,6 @@ def getLabeledSums():
     return jsonify({'correct': correct[0], 'wrong': wrong[0], 'total': totalTextAudioIndexes[0]})
 
 
-# Get audio file
-@app.route("/getAudioFile", methods=['GET'])
-def getAudioFile():
-    path = "C:\\Users\\Jonas\\Documents\\data\\" + request.args.get('fileId')
-    return send_from_directory(path, 'audio.wav')
-
-
 # Create avatar
 @app.route("/createAvatar", methods=['POST'])
 def createAvatar():
@@ -234,6 +228,7 @@ def createAvatar():
                    (request.json['userId'], json.dumps(request.json['avatar']),))
     dataBase.commit()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+
 
 # Get avatar
 @app.route("/getAvatar", methods=['GET'])
@@ -249,6 +244,12 @@ def createRecording():
                    (request.json['text'], request.json['userId'], json.dumps(request.json['audio']),))
     dataBase.commit()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+
+
+@app.route("/getAudio", methods=['GET'])
+def getAudio():
+    return send_from_directory('C:\\Users\\Jonas\\Documents\\data\\' + request.args.get('id'), 'audio.wav')
+
 
 if __name__ == '__main__':
     app.run(port=8080)
