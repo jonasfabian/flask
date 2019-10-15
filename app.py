@@ -243,5 +243,12 @@ def getAvatar():
     return Response(avatar[0][0], mimetype='image/jpg')
 
 
+@app.route("/createRecording", methods=['POST'])
+def createRecording():
+    cursor.execute("INSERT INTO recordings(text, userId, audio) VALUES(%s, %s, %s)",
+                   (request.json['text'], request.json['userId'], json.dumps(request.json['audio']),))
+    dataBase.commit()
+    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+
 if __name__ == '__main__':
     app.run(port=8080)
