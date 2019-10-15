@@ -26,22 +26,23 @@ def searchDirectories():
 
 def extractDataToDB(folderNumber: str):
     file = open('C:\\Users\\Jonas\\Documents\\data\\' + folderNumber + '\\indexes.xml')
-    xmldoc = minidom.parse(file)
-    # AudioSnippet
-    audioItemList = xmldoc.getElementsByTagName('tli')
-    for s in audioItemList:
-        audioSnippet = AudioSnippet
-        audioSnippet.timelineId = s.attributes['id'].value
-        audioSnippet.time = s.attributes['time'].value
-        query = "INSERT INTO audioSnippets (timelineId, time, fileId) VALUES (%s, %s, %s)"
-        cursor.execute(query, (
-            audioSnippet.timelineId,
-            audioSnippet.time,
-            folderNumber
-        ))
-        dataBase.commit()
+    xml_doc = minidom.parse(file)
+    audio_item_list = xml_doc.getElementsByTagName('tli')
+    audio_time = {}
+    for s in audio_item_list:
+        audio_time.update({s.attributes['id'].value: s.attributes['time'].value})
+    text_item_list = xml_doc.getElementsByTagName('tier')
+    for textItem in text_item_list:
+        if textItem.hasAttribute('speaker'):
+            for event in textItem.getElementsByTagName('event'):
+                cursor.execute("INSERT INTO textaudio (audioStart, audioEnd, text, fileId) VALUES (%s, %s, %s, %s)", (
+                    audio_time.get(event.attributes['start'].value),
+                    audio_time.get(event.attributes['end'].value),
+                    event.firstChild.nodeValue,
+                    folderNumber
+                ))
     # Speaker
-    speakerItemList = xmldoc.getElementsByTagName('speaker')
+    speakerItemList = xml_doc.getElementsByTagName('speaker')
     for sp in speakerItemList:
         speaker = Speaker
         speaker.speakerId = sp.attributes['id'].value
@@ -61,25 +62,6 @@ def extractDataToDB(folderNumber: str):
             folderNumber
         ))
         dataBase.commit()
-    # TextSnippet
-    textItemList = xmldoc.getElementsByTagName('tier')
-    for textItem in textItemList:
-        textSnippet = TextSnippet
-        if textItem.hasAttribute('speaker'):
-            textSnippet.speakerId = textItem.attributes['id'].value
-            for event in textItem.getElementsByTagName('event'):
-                textSnippet.start = event.attributes['start'].value
-                textSnippet.end = event.attributes['end'].value
-                textSnippet.text = event.firstChild.nodeValue
-                cursor.execute(
-                    "INSERT INTO textSnippets (speakerId, start, end, text, fileId) VALUES (%s, %s, %s, %s, %s)", (
-                        textSnippet.speakerId,
-                        textSnippet.start,
-                        textSnippet.end,
-                        textSnippet.text,
-                        folderNumber
-                    ))
-                dataBase.commit()
 
 
 if __name__ == "__main__":

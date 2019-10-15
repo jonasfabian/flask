@@ -29,24 +29,6 @@ def createDatabase():
 
 def createTables():
     cursor.execute(
-        """CREATE TABLE IF NOT EXISTS audioSnippets (
-        id BIGINT NOT NULL AUTO_INCREMENT,
-        timelineId VARCHAR(45),
-        time FLOAT NOT NULL,
-        fileId Int NOT NULL,
-        PRIMARY KEY (id))""")
-
-    cursor.execute(
-        """CREATE TABLE IF NOT EXISTS textSnippets (
-        id BIGINT NOT NULL AUTO_INCREMENT,
-        speakerId VARCHAR(45),
-        start VARCHAR(45),
-        end VARCHAR(45),
-        text TEXT,
-        fileId Int NOT NULL,
-        PRIMARY KEY (id))""")
-
-    cursor.execute(
         """CREATE TABLE IF NOT EXISTS speaker (
         id BIGINT NOT NULL AUTO_INCREMENT,
         speakerId VARCHAR(45),
@@ -85,12 +67,22 @@ def createTables():
         time TIMESTAMP,
         PRIMARY KEY (id),
         CONSTRAINT uni UNIQUE (userId, textAudioIndexId))""")
+
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS recordings (
         id BIGINT NOT NULL AUTO_INCREMENT,
         text MEDIUMTEXT CHARACTER SET utf8,
         userId INT NOT NULL,
         audio BLOB,
+        PRIMARY KEY (id))""")
+
+    cursor.execute(
+        """CREATE TABLE IF NOT EXISTS textAudio (
+        id BIGINT NOT NULL AUTO_INCREMENT,
+        audioStart FLOAT NOT NULL,
+        audioEnd FLOAT NOT NULL,
+        text MEDIUMTEXT,
+        fileId Int NoT NULL,
         PRIMARY KEY (id))""")
 
 
