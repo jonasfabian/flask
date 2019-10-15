@@ -135,9 +135,9 @@ def getTextAudio():
 @app.route("/updateTextAudio", methods=['POST'])
 def updateTextAudio():
     cursor.execute(
-        "UPDATE user SET audioStart = %s, audioEnd = %s, text = %s, labeled = %s, correct = %s, wrong = %s WHERE id = %s"
-        , (request.json['audioStart'], request.json['audioEnd'], request.json['text'], request.json['labeled'],
-           request.json['correct'], request.json['wrong'], request.json['id']))
+        "UPDATE textaudio SET audioStart = %s, audioEnd = %s, text = %s, labeled = %s, correct = %s, wrong = %s WHERE id = %s",
+        (request.json['audioStart'], request.json['audioEnd'], request.json['text'], request.json['labeled'],
+         request.json['correct'], request.json['wrong'], request.json['id']))
     dataBase.commit()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
