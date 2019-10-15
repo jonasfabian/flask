@@ -59,13 +59,13 @@ def createTables():
         UNIQUE KEY userId (userId))""")
 
     cursor.execute(
-        """CREATE TABLE IF NOT EXISTS userAndTextAudioIndex (
+        """CREATE TABLE IF NOT EXISTS userAndTextAudio (
         id BIGINT NOT NULL AUTO_INCREMENT,
         userId INT,
-        textAudioIndexId INT,
+        textAudioId INT,
         time TIMESTAMP,
         PRIMARY KEY (id),
-        CONSTRAINT uni UNIQUE (userId, textAudioIndexId))""")
+        CONSTRAINT uni UNIQUE (userId, textAudioId))""")
 
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS recordings (
@@ -80,9 +80,12 @@ def createTables():
         id BIGINT NOT NULL AUTO_INCREMENT,
         audioStart FLOAT NOT NULL,
         audioEnd FLOAT NOT NULL,
-        text MEDIUMTEXT,
+        text MEDIUMTEXT CHARACTER SET utf8,
         fileId Int NoT NULL,
         speaker VARCHAR(45),
+        labeled INT,
+        correct BIGINT,
+        wrong BIGINT,
         PRIMARY KEY (id))""")
 
 

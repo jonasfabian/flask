@@ -80,11 +80,10 @@ def getUserByEmail():
     return jsonify(content)
 
 
-# Get top five users by amount of labeled instances
 @app.route("/getTopFiveUsersLabeledCount", methods=['GET'])
 def getTopFiveUsersLabeledCount():
     cursor.execute(
-        "SELECT user.id, user.username, COUNT(userAndTextAudioIndex.id) FROM userAndTextAudioIndex JOIN user ON user.id = userAndTextAudioIndex.userId GROUP BY user.id")
+        "SELECT user.id, user.username, COUNT(userAndTextAudio.id) FROM userAndTextAudio JOIN user ON user.id = userAndTextAudio.userId GROUP BY user.id")
     rv = cursor.fetchall()
     payload = []
     content = {}
@@ -114,23 +113,56 @@ def deleteUser():
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
-@app.route("/getAudioSnippet", methods=['GET'])
-def getAudioSnippet():
-    cursor.execute("SELECT * FROM audiosnippets WHERE timelineId = %s", (request.args.get('timelineId'),))
+@app.route("/getTextAudio", methods=['GET'])
+def getTextAudio():
+    cursor.execute("SELECT * FROM textaudio WHERE labeled = 0 group by id asc limit 1")
     rv = cursor.fetchall()
     for result in rv:
-        content = {'id': result[0], 'timelineId': result[1], 'time': result[2], 'fileId': result[3]}
+        content = {
+            'id': result[0],
+            'audioStart': result[1],
+            'audioEnd': result[2],
+            'text': result[3],
+            'fileId': result[4],
+            'speaker': result[5],
+            'labeled': result[6],
+            'correct': result[7],
+            'wrong': result[8]
+        }
     return jsonify(content)
 
 
-@app.route("/getTextSnippet", methods=['GET'])
-def getTextSnippet():
-    cursor.execute("SELECT * FROM textsnippets WHERE id = %s", (request.args.get('id'),))
+@app.route("/updateTextAudio", methods=['POST'])
+def updateTextAudio():
+    cursor.execute(
+        "UPDATE user SET audioStart = %s, audioEnd = %s, text = %s, labeled = %s, correct = %s, wrong = %s WHERE id = %s"
+        , (request.json['audioStart'], request.json['audioEnd'], request.json['text'], request.json['labeled'],
+           request.json['correct'], request.json['wrong'], request.json['id']))
+    dataBase.commit()
+    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+
+
+@app.route("/getTextAudios", methods=['GET'])
+def getTextAudios():
+    cursor.execute("SELECT * FROM textaudio")
     rv = cursor.fetchall()
+    payload = []
+    content = {}
     for result in rv:
-        content = {'id': result[0], 'speakerId': result[1], 'start': result[2], 'end': result[3], 'text': result[4],
-                   'fileId': result[5]}
-    return jsonify(content)
+        content = {
+            'id': result[0],
+            'audioStart': result[1],
+            'audioEnd': result[2],
+            'text': result[3],
+            'fileId': result[4],
+            'speaker': result[5],
+            'labeled': result[6],
+            'correct': result[7],
+            'wrong': result[8]
+        }
+        payload.append(content)
+        content = {}
+    return jsonify(payload)
 
 
 @app.route("/getSpeaker", methods=['GET'])
@@ -139,25 +171,23 @@ def getSpeaker():
     rv = cursor.fetchall()
     for result in rv:
         content = {'id': result[0], 'speakerId': result[1], 'sex': result[2], 'languageUsed': result[3],
-                   'dialect': result[4], 'fileId': result[5]}
+                   'dialect': result[4]}
     return jsonify(content)
 
 
-# Get ten not yet labeled textAudioIndexes
-@app.route("/getTenNonLabeledDataIndexes", methods=['GET'])
-def getTenNonLabeledDataIndexes():
-    cursor.execute(
-        "SELECT textAudioIndex.*, transcript.fileId, transcript.text FROM textAudioIndex JOIN transcript ON textAudioIndex.transcript_file_id = transcript.fileId WHERE textAudioIndex.labeled = 0 ORDER BY textAudioIndex.id ASC LIMIT 10")
-    ids = cursor.fetchall()
+@app.route("/getTenNonLabeledTextAudios", methods=['GET'])
+def getTenNonLabeledTextAudios():
+    cursor.execute("SELECT * FROM textAudio where labeled = 0 group by id asc limit 10")
+    rv = cursor.fetchall()
     payload = []
     content = {}
-    for vi in ids:
+    for vi in rv:
         content = {
-            'id': vi[0], 'samplingRate': vi[1], 'textStartPos': vi[2], 'textEndPos': vi[3],
-            'audioStartPos': vi[4], 'audioEndPos': vi[5], 'speakerKey': vi[6], 'labeled': vi[7],
-            'correct': vi[8], 'wrong': vi[9], 'fileId': vi[10], 'text': vi[11]
+            'id': vi[0], 'audioStart': vi[1], 'audioEnd': vi[2], 'text': vi[3], 'fileId': vi[4], 'speaker': vi[5],
+            'labeled': vi[6], 'correct': vi[7], 'wrong': vi[8]
         }
         payload.append(content)
+        content = {}
     return jsonify(payload)
 
 
@@ -179,12 +209,11 @@ def getTextAudioIndexesByLabeledType():
     return jsonify(payload)
 
 
-# Create a userAndTextAudioIndex
-@app.route("/createUserAndTextAudioIndex", methods=['POST'])
-def createUserAndTextAudioIndex():
+@app.route("/createUserAndTextAudio", methods=['POST'])
+def createUserAndTextAudio():
     cursor.execute(
-        "INSERT INTO userAndTextAudioIndex(userId, textAudioIndexId, time) VALUES(%s, %s, %s)",
-        (request.json['userId'], request.json['textAudioIndexId'], datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+        "INSERT INTO userandtextaudio(userId, textAudioId, time) VALUES(%s, %s, %s)",
+        (request.json['userId'], request.json['textAudioId'], datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     dataBase.commit()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
@@ -210,13 +239,13 @@ def getTopFiveUsersByLabelCount():
 # Get sums of labeled
 @app.route("/getLabeledSums", methods=['GET'])
 def getLabeledSums():
-    cursor.execute("SELECT COUNT(textAudioIndex.id) FROM textAudioIndex WHERE textAudioIndex.correct != 0")
+    cursor.execute("SELECT COUNT(id) FROM textaudio WHERE correct != 0")
     correct = cursor.fetchone()
-    cursor.execute("SELECT COUNT(textAudioIndex.id) FROM textAudioIndex WHERE textAudioIndex.wrong != 0")
+    cursor.execute("SELECT COUNT(id) FROM textaudio WHERE wrong != 0")
     wrong = cursor.fetchone()
-    cursor.execute("SELECT COUNT(textAudioIndex.id) FROM textAudioIndex")
-    totalTextAudioIndexes = cursor.fetchone()
-    return jsonify({'correct': correct[0], 'wrong': wrong[0], 'total': totalTextAudioIndexes[0]})
+    cursor.execute("SELECT COUNT(id) FROM textaudio")
+    totalTextAudios = cursor.fetchone()
+    return jsonify({'correct': correct[0], 'wrong': wrong[0], 'total': totalTextAudios[0]})
 
 
 # Create avatar

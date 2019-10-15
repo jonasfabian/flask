@@ -34,12 +34,14 @@ def extractDataToDB(folderNumber: str):
         if textItem.hasAttribute('speaker'):
             for event in textItem.getElementsByTagName('event'):
                 cursor.execute(
-                    "INSERT INTO textaudio (audioStart, audioEnd, text, fileId, speaker) VALUES (%s, %s, %s, %s, %s)", (
+                    "INSERT INTO textaudio (audioStart, audioEnd, text, fileId, speaker, labeled, correct, wrong) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                    (
                         audio_time.get(event.attributes['start'].value),
                         audio_time.get(event.attributes['end'].value),
                         event.firstChild.nodeValue,
                         folderNumber,
-                        textItem.attributes['speaker'].value
+                        textItem.attributes['speaker'].value,
+                        0, 0, 0
                     ))
     speakerItemList = xml_doc.getElementsByTagName('speaker')
     for sp in speakerItemList:
