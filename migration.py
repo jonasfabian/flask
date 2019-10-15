@@ -1,9 +1,7 @@
 import mysql.connector as mariadb
 import os
 from xml.dom import minidom
-from audio import AudioSnippet
 from speaker import Speaker
-from textSnippet import TextSnippet
 
 dataBase = mariadb.connect(
     host='localhost',
@@ -35,13 +33,14 @@ def extractDataToDB(folderNumber: str):
     for textItem in text_item_list:
         if textItem.hasAttribute('speaker'):
             for event in textItem.getElementsByTagName('event'):
-                cursor.execute("INSERT INTO textaudio (audioStart, audioEnd, text, fileId) VALUES (%s, %s, %s, %s)", (
-                    audio_time.get(event.attributes['start'].value),
-                    audio_time.get(event.attributes['end'].value),
-                    event.firstChild.nodeValue,
-                    folderNumber
-                ))
-    # Speaker
+                cursor.execute(
+                    "INSERT INTO textaudio (audioStart, audioEnd, text, fileId, speaker) VALUES (%s, %s, %s, %s, %s)", (
+                        audio_time.get(event.attributes['start'].value),
+                        audio_time.get(event.attributes['end'].value),
+                        event.firstChild.nodeValue,
+                        folderNumber,
+                        textItem.attributes['speaker'].value
+                    ))
     speakerItemList = xml_doc.getElementsByTagName('speaker')
     for sp in speakerItemList:
         speaker = Speaker
@@ -53,13 +52,12 @@ def extractDataToDB(folderNumber: str):
             'ud-information')
         if len(dialectElement) > 0:
             speaker.dialect = dialectElement[0].firstChild.nodeValue
-        query = "INSERT INTO speaker (speakerId, sex, languageUsed, dialect, fileId) VALUES (%s, %s, %s, %s, %s)"
+        query = "INSERT INTO speaker (speakerId, sex, languageUsed, dialect) VALUES (%s, %s, %s, %s)"
         cursor.execute(query, (
             speaker.speakerId,
             speaker.sex,
             speaker.languageUsed,
-            speaker.dialect,
-            folderNumber
+            speaker.dialect
         ))
         dataBase.commit()
 

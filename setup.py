@@ -35,7 +35,6 @@ def createTables():
         sex VARCHAR(45),
         languageUsed VARCHAR(45),
         dialect VARCHAR(45),
-        fileId Int NOT NULL,
         PRIMARY KEY (id))""")
 
     cursor.execute(
@@ -83,6 +82,7 @@ def createTables():
         audioEnd FLOAT NOT NULL,
         text MEDIUMTEXT,
         fileId Int NoT NULL,
+        speaker VARCHAR(45),
         PRIMARY KEY (id))""")
 
 
