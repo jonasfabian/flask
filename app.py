@@ -1,10 +1,11 @@
 import mysql.connector
 from datetime import datetime
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
 from flask_login import LoginManager
 from flask_restful import Api
 from flask_bcrypt import Bcrypt
+import json
 
 import user
 
@@ -53,7 +54,7 @@ def getUserById():
     rv = cursor.fetchall()
     for result in rv:
         content = {'id': result[0], 'firstName': result[1], 'lastName': result[2], 'email': result[3],
-                   'username': result[4], 'avatarVersion': result[5]}
+                   'username': result[4], 'avatarVersion': result[5], 'canton': result[7]}
     return jsonify(content)
 
 
@@ -64,7 +65,7 @@ def getUserByUsername():
     rv = cursor.fetchall()
     for result in rv:
         content = {'id': result[0], 'firstName': result[1], 'lastName': result[2], 'email': result[3],
-                   'username': result[4], 'avatarVersion': result[5]}
+                   'username': result[4], 'avatarVersion': result[5], 'canton': result[7]}
     return jsonify(content)
 
 
@@ -75,7 +76,7 @@ def getUserByEmail():
     rv = cursor.fetchall()
     for result in rv:
         content = {'id': result[0], 'firstName': result[1], 'lastName': result[2], 'email': result[3],
-                   'username': result[4], 'avatarVersion': result[5]}
+                   'username': result[4], 'avatarVersion': result[5], 'canton': result[7]}
     return jsonify(content)
 
 
@@ -95,13 +96,12 @@ def getTopFiveUsersLabeledCount():
 
 
 # Update a user
-@app.route("/updateUser", methods=['PUT'])
+@app.route("/updateUser", methods=['POST'])
 def updateUser():
-    pw = bcrypt.generate_password_hash(request.json['password'])
     cursor.execute(
-        "UPDATE user SET firstName = %s, lastName = %s, email = %s, username = %s, avatarVersion = %s, password = %s WHERE id = %s",
+        "UPDATE user SET firstName = %s, lastName = %s, email = %s, username = %s, avatarVersion = %s, canton = %s WHERE id = %s",
         (request.json['firstName'], request.json['lastName'], request.json['email'],
-         request.json['username'], request.json['avatarVersion'], pw, request.json['id']))
+         request.json['username'], request.json['avatarVersion'], request.json['canton'], request.json['id']))
     dataBase.commit()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
@@ -226,20 +226,21 @@ def getAudioFile():
 
 
 # Create avatar
-@app.route("/createAvatar", methods=['GET'])
+@app.route("/createAvatar", methods=['POST'])
 def createAvatar():
     cursor.execute("DELETE FROM avatar WHERE avatar.userId = %s", (request.json['userId'],))
     dataBase.commit()
     cursor.execute("INSERT INTO avatar(userId, avatar) VALUES(%s, %s)",
-                   (request.json['userId'], request.json['avatar'],))
+                   (request.json['userId'], json.dumps(request.json['avatar']),))
     dataBase.commit()
+    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 # Get avatar
 @app.route("/getAvatar", methods=['GET'])
 def getAvatar():
-    cursor.execute("SELECT FROM avatar WHERE avatar.userId = %s", (request.args.get('userId'),))
+    cursor.execute("SELECT avatar FROM avatar WHERE userId = %s", (request.args.get('userId'),))
     avatar = cursor.fetchall()
-    return jsonify(avatar)
+    return Response(avatar[0][0], mimetype='image/jpg')
 
 
 if __name__ == '__main__':
