@@ -1,10 +1,11 @@
 import mysql.connector
 from datetime import datetime
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
 from flask_login import LoginManager
 from flask_restful import Api
 from flask_bcrypt import Bcrypt
+import json
 
 import user
 
@@ -27,11 +28,11 @@ dataBase = mysql.connector.connect(
 cursor = dataBase.cursor()
 
 
-@app.route("/authenticated", methods=['POST'])
-def authenticated():
+@app.route("/checkLogin", methods=['POST'])
+def checkLogin():
     userr = user
     return jsonify(
-        {'Authenticated': userr.User.is_authenticated(app, bcrypt, request.json['username'], request.json['password'])})
+        {'Authenticated': userr.User.is_authenticated(app, bcrypt, request.json['email'], request.json['password'])})
 
 
 # Create a user
@@ -39,9 +40,9 @@ def authenticated():
 def createUser():
     pw = bcrypt.generate_password_hash(request.json['password']).decode('utf-8')
     cursor.execute(
-        "INSERT INTO user(id, firstName, lastName, email, username, avatarVersion, password) VALUES(%s, %s, %s, %s, %s, %s, %s)",
+        "INSERT INTO user(id, firstName, lastName, email, username, avatarVersion, password, canton) VALUES(%s, %s, %s, %s, %s, %s, %s, %s)",
         (request.json['id'], request.json['firstName'], request.json['lastName'], request.json['email'],
-         request.json['username'], request.json['avatarVersion'], pw))
+         request.json['username'], request.json['avatarVersion'], pw, request.json['canton']))
     dataBase.commit()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
@@ -53,7 +54,7 @@ def getUserById():
     rv = cursor.fetchall()
     for result in rv:
         content = {'id': result[0], 'firstName': result[1], 'lastName': result[2], 'email': result[3],
-                   'username': result[4], 'avatarVersion': result[5]}
+                   'username': result[4], 'avatarVersion': result[5], 'canton': result[7]}
     return jsonify(content)
 
 
@@ -64,7 +65,7 @@ def getUserByUsername():
     rv = cursor.fetchall()
     for result in rv:
         content = {'id': result[0], 'firstName': result[1], 'lastName': result[2], 'email': result[3],
-                   'username': result[4], 'avatarVersion': result[5]}
+                   'username': result[4], 'avatarVersion': result[5], 'canton': result[7]}
     return jsonify(content)
 
 
@@ -75,15 +76,14 @@ def getUserByEmail():
     rv = cursor.fetchall()
     for result in rv:
         content = {'id': result[0], 'firstName': result[1], 'lastName': result[2], 'email': result[3],
-                   'username': result[4], 'avatarVersion': result[5]}
+                   'username': result[4], 'avatarVersion': result[5], 'canton': result[7]}
     return jsonify(content)
 
 
-# Get top five users by amount of labeled instances
 @app.route("/getTopFiveUsersLabeledCount", methods=['GET'])
 def getTopFiveUsersLabeledCount():
     cursor.execute(
-        "SELECT user.id, user.username, COUNT(userAndTextAudioIndex.id) FROM userAndTextAudioIndex JOIN user ON user.id = userAndTextAudioIndex.userId GROUP BY user.id")
+        "SELECT user.id, user.username, COUNT(userAndTextAudio.id) FROM userAndTextAudio JOIN user ON user.id = userAndTextAudio.userId GROUP BY user.id")
     rv = cursor.fetchall()
     payload = []
     content = {}
@@ -95,13 +95,12 @@ def getTopFiveUsersLabeledCount():
 
 
 # Update a user
-@app.route("/updateUser", methods=['PUT'])
+@app.route("/updateUser", methods=['POST'])
 def updateUser():
-    pw = bcrypt.generate_password_hash(request.json['password'])
     cursor.execute(
-        "UPDATE user SET firstName = %s, lastName = %s, email = %s, username = %s, avatarVersion = %s, password = %s WHERE id = %s",
+        "UPDATE user SET firstName = %s, lastName = %s, email = %s, username = %s, avatarVersion = %s, canton = %s WHERE id = %s",
         (request.json['firstName'], request.json['lastName'], request.json['email'],
-         request.json['username'], request.json['avatarVersion'], pw, request.json['id']))
+         request.json['username'], request.json['avatarVersion'], request.json['canton'], request.json['id']))
     dataBase.commit()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
@@ -114,22 +113,56 @@ def deleteUser():
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
-@app.route("/getAudioSnippet", methods=['GET'])
-def getAudioSnippet():
-    cursor.execute("SELECT * FROM audiosnippets WHERE timelineId = %s", (request.args.get('timelineId'),))
+@app.route("/getTextAudio", methods=['GET'])
+def getTextAudio():
+    cursor.execute("SELECT * FROM textaudio WHERE labeled = 0 group by id asc limit 1")
     rv = cursor.fetchall()
     for result in rv:
-        content = {'id': result[0], 'timelineId': result[1], 'time': result[2], 'fileId': result[3]}
+        content = {
+            'id': result[0],
+            'audioStart': result[1],
+            'audioEnd': result[2],
+            'text': result[3],
+            'fileId': result[4],
+            'speaker': result[5],
+            'labeled': result[6],
+            'correct': result[7],
+            'wrong': result[8]
+        }
     return jsonify(content)
 
 
-@app.route("/getTextSnippet", methods=['GET'])
-def getTextSnippet():
-    cursor.execute("SELECT * FROM textsnippets WHERE id = %s", (request.args.get('id'),))
+@app.route("/updateTextAudio", methods=['POST'])
+def updateTextAudio():
+    cursor.execute(
+        "UPDATE textaudio SET audioStart = %s, audioEnd = %s, text = %s, labeled = %s, correct = %s, wrong = %s WHERE id = %s",
+        (request.json['audioStart'], request.json['audioEnd'], request.json['text'], request.json['labeled'],
+         request.json['correct'], request.json['wrong'], request.json['id']))
+    dataBase.commit()
+    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+
+
+@app.route("/getTextAudios", methods=['GET'])
+def getTextAudios():
+    cursor.execute("SELECT * FROM textaudio")
     rv = cursor.fetchall()
+    payload = []
+    content = {}
     for result in rv:
-        content = {'id': result[0], 'speakerId': result[1], 'start': result[2], 'end': result[3], 'text': result[4], 'fileId': result[5]}
-    return jsonify(content)
+        content = {
+            'id': result[0],
+            'audioStart': result[1],
+            'audioEnd': result[2],
+            'text': result[3],
+            'fileId': result[4],
+            'speaker': result[5],
+            'labeled': result[6],
+            'correct': result[7],
+            'wrong': result[8]
+        }
+        payload.append(content)
+        content = {}
+    return jsonify(payload)
 
 
 @app.route("/getSpeaker", methods=['GET'])
@@ -138,25 +171,23 @@ def getSpeaker():
     rv = cursor.fetchall()
     for result in rv:
         content = {'id': result[0], 'speakerId': result[1], 'sex': result[2], 'languageUsed': result[3],
-                   'dialect': result[4], 'fileId': result[5]}
+                   'dialect': result[4]}
     return jsonify(content)
 
 
-# Get ten not yet labeled textAudioIndexes
-@app.route("/getTenNonLabeledDataIndexes", methods=['GET'])
-def getTenNonLabeledDataIndexes():
-    cursor.execute(
-        "SELECT textAudioIndex.*, transcript.fileId, transcript.text FROM textAudioIndex JOIN transcript ON textAudioIndex.transcript_file_id = transcript.fileId WHERE textAudioIndex.labeled = 0 ORDER BY textAudioIndex.id ASC LIMIT 10")
-    ids = cursor.fetchall()
+@app.route("/getTenNonLabeledTextAudios", methods=['GET'])
+def getTenNonLabeledTextAudios():
+    cursor.execute("SELECT * FROM textAudio where labeled = 0 group by id asc limit 10")
+    rv = cursor.fetchall()
     payload = []
     content = {}
-    for vi in ids:
+    for vi in rv:
         content = {
-            'id': vi[0], 'samplingRate': vi[1], 'textStartPos': vi[2], 'textEndPos': vi[3],
-            'audioStartPos': vi[4], 'audioEndPos': vi[5], 'speakerKey': vi[6], 'labeled': vi[7],
-            'correct': vi[8], 'wrong': vi[9], 'fileId': vi[10], 'text': vi[11]
+            'id': vi[0], 'audioStart': vi[1], 'audioEnd': vi[2], 'text': vi[3], 'fileId': vi[4], 'speaker': vi[5],
+            'labeled': vi[6], 'correct': vi[7], 'wrong': vi[8]
         }
         payload.append(content)
+        content = {}
     return jsonify(payload)
 
 
@@ -178,12 +209,11 @@ def getTextAudioIndexesByLabeledType():
     return jsonify(payload)
 
 
-# Create a userAndTextAudioIndex
-@app.route("/createUserAndTextAudioIndex", methods=['POST'])
-def createUserAndTextAudioIndex():
+@app.route("/createUserAndTextAudio", methods=['POST'])
+def createUserAndTextAudio():
     cursor.execute(
-        "INSERT INTO userAndTextAudioIndex(userId, textAudioIndexId, time) VALUES(%s, %s, %s)",
-        (request.json['userId'], request.json['textAudioIndexId'], datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+        "INSERT INTO userandtextaudio(userId, textAudioId, time) VALUES(%s, %s, %s)",
+        (request.json['userId'], request.json['textAudioId'], datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     dataBase.commit()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
@@ -209,37 +239,45 @@ def getTopFiveUsersByLabelCount():
 # Get sums of labeled
 @app.route("/getLabeledSums", methods=['GET'])
 def getLabeledSums():
-    cursor.execute("SELECT COUNT(textAudioIndex.id) FROM textAudioIndex WHERE textAudioIndex.correct != 0")
+    cursor.execute("SELECT COUNT(id) FROM textaudio WHERE correct != 0")
     correct = cursor.fetchone()
-    cursor.execute("SELECT COUNT(textAudioIndex.id) FROM textAudioIndex WHERE textAudioIndex.wrong != 0")
+    cursor.execute("SELECT COUNT(id) FROM textaudio WHERE wrong != 0")
     wrong = cursor.fetchone()
-    cursor.execute("SELECT COUNT(textAudioIndex.id) FROM textAudioIndex")
-    totalTextAudioIndexes = cursor.fetchone()
-    return jsonify({'correct': correct[0], 'wrong': wrong[0], 'total': totalTextAudioIndexes[0]})
-
-
-# Get audio file
-@app.route("/getAudioFile", methods=['GET'])
-def getAudioFile():
-    path = "C:\\Users\\Jonas\\Documents\\data\\" + request.args.get('fileId')
-    return send_from_directory(path, 'audio.wav')
+    cursor.execute("SELECT COUNT(id) FROM textaudio")
+    totalTextAudios = cursor.fetchone()
+    return jsonify({'correct': correct[0], 'wrong': wrong[0], 'total': totalTextAudios[0]})
 
 
 # Create avatar
-@app.route("/createAvatar", methods=['GET'])
+@app.route("/createAvatar", methods=['POST'])
 def createAvatar():
     cursor.execute("DELETE FROM avatar WHERE avatar.userId = %s", (request.json['userId'],))
     dataBase.commit()
     cursor.execute("INSERT INTO avatar(userId, avatar) VALUES(%s, %s)",
-                   (request.json['userId'], request.json['avatar'],))
+                   (request.json['userId'], json.dumps(request.json['avatar']),))
     dataBase.commit()
+    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+
 
 # Get avatar
 @app.route("/getAvatar", methods=['GET'])
 def getAvatar():
-    cursor.execute("SELECT FROM avatar WHERE avatar.userId = %s", (request.args.get('userId'),))
+    cursor.execute("SELECT avatar FROM avatar WHERE userId = %s", (request.args.get('userId'),))
     avatar = cursor.fetchall()
-    return jsonify(avatar)
+    return Response(avatar[0][0], mimetype='image/jpg')
+
+
+@app.route("/createRecording", methods=['POST'])
+def createRecording():
+    cursor.execute("INSERT INTO recordings(text, userId, audio) VALUES(%s, %s, %s)",
+                   (request.json['text'], request.json['userId'], json.dumps(request.json['audio']),))
+    dataBase.commit()
+    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+
+
+@app.route("/getAudio", methods=['GET'])
+def getAudio():
+    return send_from_directory('C:\\Users\\Jonas\\Documents\\data\\' + request.args.get('id'), 'audio.wav')
 
 
 if __name__ == '__main__':

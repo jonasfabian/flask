@@ -29,31 +29,12 @@ def createDatabase():
 
 def createTables():
     cursor.execute(
-        """CREATE TABLE IF NOT EXISTS audioSnippets (
-        id BIGINT NOT NULL AUTO_INCREMENT,
-        timelineId VARCHAR(45),
-        time FLOAT NOT NULL,
-        fileId Int NOT NULL,
-        PRIMARY KEY (id))""")
-
-    cursor.execute(
-        """CREATE TABLE IF NOT EXISTS textSnippets (
-        id BIGINT NOT NULL AUTO_INCREMENT,
-        speakerId VARCHAR(45),
-        start VARCHAR(45),
-        end VARCHAR(45),
-        text TEXT,
-        fileId Int NOT NULL,
-        PRIMARY KEY (id))""")
-
-    cursor.execute(
         """CREATE TABLE IF NOT EXISTS speaker (
         id BIGINT NOT NULL AUTO_INCREMENT,
         speakerId VARCHAR(45),
         sex VARCHAR(45),
         languageUsed VARCHAR(45),
         dialect VARCHAR(45),
-        fileId Int NOT NULL,
         PRIMARY KEY (id))""")
 
     cursor.execute(
@@ -65,6 +46,7 @@ def createTables():
         username VARCHAR(100),
         avatarVersion INT,
         password VARCHAR (100),
+        canton VARCHAR(45),
         PRIMARY KEY (id),
         UNIQUE KEY email (email))""")
 
@@ -77,13 +59,34 @@ def createTables():
         UNIQUE KEY userId (userId))""")
 
     cursor.execute(
-        """CREATE TABLE IF NOT EXISTS userAndTextAudioIndex (
+        """CREATE TABLE IF NOT EXISTS userAndTextAudio (
         id BIGINT NOT NULL AUTO_INCREMENT,
         userId INT,
-        textAudioIndexId INT,
+        textAudioId INT,
         time TIMESTAMP,
         PRIMARY KEY (id),
-        CONSTRAINT uni UNIQUE (userId, textAudioIndexId))""")
+        CONSTRAINT uni UNIQUE (userId, textAudioId))""")
+
+    cursor.execute(
+        """CREATE TABLE IF NOT EXISTS recordings (
+        id BIGINT NOT NULL AUTO_INCREMENT,
+        text MEDIUMTEXT CHARACTER SET utf8,
+        userId INT NOT NULL,
+        audio BLOB,
+        PRIMARY KEY (id))""")
+
+    cursor.execute(
+        """CREATE TABLE IF NOT EXISTS textAudio (
+        id BIGINT NOT NULL AUTO_INCREMENT,
+        audioStart FLOAT NOT NULL,
+        audioEnd FLOAT NOT NULL,
+        text MEDIUMTEXT CHARACTER SET utf8,
+        fileId Int NoT NULL,
+        speaker VARCHAR(45),
+        labeled INT,
+        correct BIGINT,
+        wrong BIGINT,
+        PRIMARY KEY (id))""")
 
 
 def main():
