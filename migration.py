@@ -5,8 +5,8 @@ from speaker import Speaker
 
 dataBase = mariadb.connect(
     host='localhost',
-    user='root',
-    passwd='password',
+    user='flask',
+    passwd='flask',
     database='labeling-tool'
 )
 cursor = dataBase.cursor()

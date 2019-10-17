@@ -17,8 +17,8 @@ class User:
         CORS(app)
         dataBase = mysql.connector.connect(
             host='localhost',
-            user='root',
-            passwd='password',
+            user='flask',
+            passwd='flask',
             database='labeling-tool'
         )
         cursor = dataBase.cursor()

@@ -2,8 +2,8 @@ import mysql.connector as mariadb
 
 dataBase = mariadb.connect(
     host='localhost',
-    user='root',
-    passwd='password'
+    user='flask',
+    passwd='flask'
 )
 cursor = dataBase.cursor()
 
@@ -20,8 +20,8 @@ def createDatabase():
     dataBase.close()
     dataBase = mariadb.connect(
         host='localhost',
-        user='root',
-        passwd='password',
+        user='flask',
+        passwd='flask',
         database='labeling-tool'
     )
     cursor = dataBase.cursor()
