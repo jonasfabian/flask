@@ -1,10 +1,12 @@
-import mysql.connector as mariadb
+import mysql.connector
 
-dataBase = mariadb.connect(
+dataBase = mysql.connector.connect(
     host='localhost',
-    user='flask',
-    passwd='flask'
+    user='root',
+    passwd='password',
+    database='labeling-tool'
 )
+
 cursor = dataBase.cursor()
 
 
@@ -18,10 +20,10 @@ def createDatabase():
     global cursor
     cursor.execute("CREATE DATABASE IF NOT EXISTS `labeling-tool`")
     dataBase.close()
-    dataBase = mariadb.connect(
+    dataBase = mysql.connector.connect(
         host='localhost',
-        user='flask',
-        passwd='flask',
+        user='root',
+        passwd='password',
         database='labeling-tool'
     )
     cursor = dataBase.cursor()

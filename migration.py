@@ -2,12 +2,11 @@ import mysql.connector as mariadb
 import os
 from xml.dom import minidom
 from speaker import Speaker
-from configuration import *
 
 dataBase = mariadb.connect(
     host='localhost',
-    user='flask',
-    passwd='flask',
+    user='root',
+    passwd='password',
     database='labeling-tool'
 )
 cursor = dataBase.cursor()
@@ -15,16 +14,16 @@ cursor = dataBase.cursor()
 
 def searchDirectories():
     print('Loading...')
-    entries = os.scandir(dir)
+    entries = os.scandir("C:\\Users\\Jonas\\Documents\\data\\")
     for entry in entries:
-        for fileData in os.listdir(dirSlash + entry.name):
+        for fileData in os.listdir("C:\\Users\\Jonas\\Documents\\data\\" + entry.name + "\\"):
             if fileData.endswith(".xml"):
                 extractDataToDB(entry.name)
     print('Done!')
 
 
 def extractDataToDB(folderNumber: str):
-    file = open(dirSlash + folderNumber + '/indexes.xml')
+    file = open('C:\\Users\\Jonas\\Documents\\data\\' + folderNumber + '\\indexes.xml')
     xml_doc = minidom.parse(file)
     audio_item_list = xml_doc.getElementsByTagName('tli')
     audio_time = {}
