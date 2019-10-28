@@ -14,9 +14,9 @@ cursor = dataBase.cursor()
 
 def searchDirectories():
     print('Loading...')
-    entries = os.scandir('C:\\Users\\Jonas\\Documents\\data')
+    entries = os.scandir("C:\\Users\\Jonas\\Documents\\data\\")
     for entry in entries:
-        for fileData in os.listdir('C:\\Users\\Jonas\\Documents\\data\\' + entry.name):
+        for fileData in os.listdir("C:\\Users\\Jonas\\Documents\\data\\" + entry.name + "\\"):
             if fileData.endswith(".xml"):
                 extractDataToDB(entry.name)
     print('Done!')
@@ -34,7 +34,7 @@ def extractDataToDB(folderNumber: str):
         if textItem.hasAttribute('speaker'):
             for event in textItem.getElementsByTagName('event'):
                 cursor.execute(
-                    "INSERT INTO textaudio (audioStart, audioEnd, text, fileId, speaker, labeled, correct, wrong) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                    "INSERT INTO textAudio (audioStart, audioEnd, text, fileId, speaker, labeled, correct, wrong) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
                     (
                         audio_time.get(event.attributes['start'].value),
                         audio_time.get(event.attributes['end'].value),

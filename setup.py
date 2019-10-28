@@ -1,10 +1,12 @@
-import mysql.connector as mariadb
+import mysql.connector
 
-dataBase = mariadb.connect(
+dataBase = mysql.connector.connect(
     host='localhost',
     user='root',
-    passwd='password'
+    passwd='password',
+    database='labeling-tool'
 )
+
 cursor = dataBase.cursor()
 
 
@@ -18,7 +20,7 @@ def createDatabase():
     global cursor
     cursor.execute("CREATE DATABASE IF NOT EXISTS `labeling-tool`")
     dataBase.close()
-    dataBase = mariadb.connect(
+    dataBase = mysql.connector.connect(
         host='localhost',
         user='root',
         passwd='password',
@@ -35,7 +37,7 @@ def createTables():
         sex VARCHAR(45),
         languageUsed VARCHAR(45),
         dialect VARCHAR(45),
-        PRIMARY KEY (id))""")
+        PRIMARY KEY (id)) ENGINE = INNODB DEFAULT CHARSET = UTF8MB4""")
 
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS user (
@@ -48,15 +50,15 @@ def createTables():
         password VARCHAR (100),
         canton VARCHAR(45),
         PRIMARY KEY (id),
-        UNIQUE KEY email (email))""")
+        UNIQUE KEY email (email)) ENGINE = INNODB DEFAULT CHARSET = UTF8MB4""")
 
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS avatar (
         id BIGINT NOT NULL AUTO_INCREMENT,
         userId INT,
-        avatar BLOB,
+        avatar MEDIUMBLOB,
         PRIMARY KEY (id),
-        UNIQUE KEY userId (userId))""")
+        UNIQUE KEY userId (userId)) ENGINE = INNODB DEFAULT CHARSET = UTF8MB4""")
 
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS userAndTextAudio (
@@ -65,7 +67,7 @@ def createTables():
         textAudioId INT,
         time TIMESTAMP,
         PRIMARY KEY (id),
-        CONSTRAINT uni UNIQUE (userId, textAudioId))""")
+        CONSTRAINT uni UNIQUE (userId, textAudioId)) ENGINE = INNODB DEFAULT CHARSET = UTF8MB4""")
 
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS recordings (
@@ -73,7 +75,7 @@ def createTables():
         text MEDIUMTEXT CHARACTER SET utf8,
         userId INT NOT NULL,
         audio BLOB,
-        PRIMARY KEY (id))""")
+        PRIMARY KEY (id)) ENGINE = INNODB DEFAULT CHARSET = UTF8MB4""")
 
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS textAudio (
@@ -86,7 +88,7 @@ def createTables():
         labeled INT,
         correct BIGINT,
         wrong BIGINT,
-        PRIMARY KEY (id))""")
+        PRIMARY KEY (id)) ENGINE = INNODB DEFAULT CHARSET = UTF8MB4""")
 
 
 def main():
