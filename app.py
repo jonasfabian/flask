@@ -299,9 +299,9 @@ def createAvatar():
 def getAvatar():
     cur = mysql.connection.cursor()
     cur.execute("SELECT avatar FROM avatar WHERE userId = %s", (request.args.get('userId'),))
-    avatar = cur.fetchall()
+    avatar = cur.fetchone()
     cur.close()
-    return Response(avatar[0][0], mimetype='image/jpg')
+    return Response(avatar['avatar'], mimetype='image/jpg')
 
 
 @app.route("/createRecording", methods=['POST'])

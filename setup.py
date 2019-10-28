@@ -56,7 +56,7 @@ def createTables():
         """CREATE TABLE IF NOT EXISTS avatar (
         id BIGINT NOT NULL AUTO_INCREMENT,
         userId INT,
-        avatar BLOB,
+        avatar MEDIUMBLOB,
         PRIMARY KEY (id),
         UNIQUE KEY userId (userId)) ENGINE = INNODB DEFAULT CHARSET = UTF8MB4""")
 
