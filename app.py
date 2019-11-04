@@ -1,10 +1,14 @@
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
-from flask_login import LoginManager
 from flask_restful import Api
 from flask_bcrypt import Bcrypt
 from flask_mysqldb import MySQL
+
+from flask_jwt_extended import JWTManager, jwt_required
+from flask_jwt_extended import (create_access_token)
+from flask_jwt_extended import (create_refresh_token)
+
 import json
 
 app = Flask(__name__)
@@ -18,27 +22,33 @@ app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = 'password'
 app.config['MYSQL_DB'] = 'labeling-tool'
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
-
-loginManager = LoginManager()
-loginManager.init_app(app)
+app.config['JWT_SECRET_KEY'] = 'jwt-secret-string'
+app.config['PROPAGATE_EXCEPTIONS'] = True
 
 bcrypt = Bcrypt(app)
-
+jwt = JWTManager(app)
 CORS(app)
 
 mysql = MySQL(app)
 
 
-@app.route("/checkLogin", methods=['POST'])
-def checkLogin():
+@app.route("/login", methods=['POST'])
+def login():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM user WHERE email = %s", (request.json['email'],))
-    rv = cur.fetchall()
-    for res in rv:
-        return jsonify({'Authenticated': bcrypt.check_password_hash(res['password'], request.json['password'])})
+    rv = cur.fetchone()
+    if bcrypt.check_password_hash(rv['password'], request.json['password']):
+        ret = {
+            'access_token': create_access_token(identity=rv['username']),
+            'refresh_token': create_refresh_token(identity=rv['username'])
+        }
+        return jsonify(ret), 200
+    else:
+        return jsonify({"msg": "Bad username or password"}), 401
 
 
 @app.route("/changePassword", methods=['POST'])
+@jwt_required
 def changePassword():
     cur = mysql.connection.cursor()
     cur.execute("SELECT password FROM user WHERE id = %s", (request.json['userId'],))
@@ -70,6 +80,7 @@ def createUser():
 
 # Get a user by Id
 @app.route("/getUserById", methods=['GET'])
+@jwt_required
 def getUserById():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM user WHERE id = %s", (request.args.get('id'),))
@@ -83,6 +94,7 @@ def getUserById():
 
 # Get a user by username
 @app.route("/getUserByUsername", methods=['GET'])
+@jwt_required
 def getUserByUsername():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM user WHERE username = %s", (request.args.get('username'),))
@@ -97,6 +109,7 @@ def getUserByUsername():
 
 # Get a user by email
 @app.route("/getUserByEmail", methods=['GET'])
+@jwt_required
 def getUserByEmail():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM user WHERE email = %s", (request.args.get('email'),))
@@ -112,6 +125,7 @@ def getUserByEmail():
 
 # Update a user
 @app.route("/updateUser", methods=['POST'])
+@jwt_required
 def updateUser():
     cur = mysql.connection.cursor()
     cur.execute(
@@ -125,6 +139,7 @@ def updateUser():
 
 # Delete a user
 @app.route("/deleteUser", methods=['DELETE'])
+@jwt_required
 def deleteUser():
     cur = mysql.connection.cursor()
     cur.execute("DELETE FROM user WHERE id = %s", (request.args.get('id'),))
@@ -134,6 +149,7 @@ def deleteUser():
 
 
 @app.route("/getTextAudio", methods=['GET'])
+@jwt_required
 def getTextAudio():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM textAudio WHERE labeled = 0 group by id asc limit 1")
@@ -155,6 +171,7 @@ def getTextAudio():
 
 
 @app.route("/updateTextAudio", methods=['POST'])
+@jwt_required
 def updateTextAudio():
     cur = mysql.connection.cursor()
     cur.execute(
@@ -167,6 +184,7 @@ def updateTextAudio():
 
 
 @app.route("/getTextAudios", methods=['GET'])
+@jwt_required
 def getTextAudios():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM textAudio LIMIT 10")
@@ -190,6 +208,7 @@ def getTextAudios():
 
 
 @app.route("/getSpeaker", methods=['GET'])
+@jwt_required
 def getSpeaker():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM speaker WHERE speakerId = %s", (request.args.get('speakerId'),))
@@ -203,6 +222,7 @@ def getSpeaker():
 
 
 @app.route("/getTenNonLabeledTextAudios", methods=['GET'])
+@jwt_required
 def getTenNonLabeledTextAudios():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM textAudio where labeled = 0 group by id asc limit 10")
@@ -221,6 +241,7 @@ def getTenNonLabeledTextAudios():
 
 # Get textAudioIndex by labeled type
 @app.route("/getTextAudioIndexesByLabeledType", methods=['GET'])
+@jwt_required
 def getTextAudioIndexesByLabeledType():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM textAudioIndex WHERE labeled = %s", (request.args.get('labeledType'),))
@@ -240,6 +261,7 @@ def getTextAudioIndexesByLabeledType():
 
 
 @app.route("/createUserAndTextAudio", methods=['POST'])
+@jwt_required
 def createUserAndTextAudio():
     cur = mysql.connection.cursor()
     cur.execute(
@@ -252,6 +274,7 @@ def createUserAndTextAudio():
 
 # Get top five users by labeling amount
 @app.route("/getTopFive", methods=['GET', 'OPTIONS'])
+@jwt_required
 def getTopFive():
     cur = mysql.connection.cursor()
     cur.execute(
@@ -269,6 +292,7 @@ def getTopFive():
 
 # Get sums of labeled
 @app.route("/getLabeledSums", methods=['GET'])
+@jwt_required
 def getLabeledSums():
     cur = mysql.connection.cursor()
     cur.execute("SELECT COUNT(id) FROM textAudio WHERE correct != 0")
@@ -283,6 +307,7 @@ def getLabeledSums():
 
 # Create avatar
 @app.route("/createAvatar", methods=['POST'])
+@jwt_required
 def createAvatar():
     cur = mysql.connection.cursor()
     cur.execute("DELETE FROM avatar WHERE avatar.userId = %s", (request.json['userId'],))
@@ -296,6 +321,7 @@ def createAvatar():
 
 # Get avatar
 @app.route("/getAvatar", methods=['GET'])
+@jwt_required
 def getAvatar():
     cur = mysql.connection.cursor()
     cur.execute("SELECT avatar FROM avatar WHERE userId = %s", (request.args.get('userId'),))
@@ -305,6 +331,7 @@ def getAvatar():
 
 
 @app.route("/createRecording", methods=['POST'])
+@jwt_required
 def createRecording():
     cur = mysql.connection.cursor()
     cur.execute("INSERT INTO recordings(text, userId, audio) VALUES(%s, %s, %s)",
@@ -315,6 +342,7 @@ def createRecording():
 
 
 @app.route("/getAudio", methods=['GET', 'OPTIONS'])
+@jwt_required
 def getAudio():
     return send_from_directory('C:\\Users\\Jonas\\Documents\\data\\' + request.args.get('id'), 'audio.wav')
 
