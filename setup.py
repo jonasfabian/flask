@@ -74,7 +74,7 @@ def createTables():
         id BIGINT NOT NULL AUTO_INCREMENT,
         text MEDIUMTEXT CHARACTER SET utf8,
         userId INT NOT NULL,
-        audio BLOB,
+        audio Mediumblob,
         PRIMARY KEY (id)) ENGINE = INNODB DEFAULT CHARSET = UTF8MB4""")
 
     cursor.execute(
