@@ -169,7 +169,7 @@ def updateTextAudio():
 @app.route("/getTextAudios", methods=['GET'])
 def getTextAudios():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM textAudio LIMIT 10")
+    cur.execute("SELECT * FROM textAudio")
     rv = cur.fetchall()
     payload = []
     for result in rv:
