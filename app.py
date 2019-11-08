@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
-from flask_login import LoginManager
+from flask_login import login_required, login_user, LoginManager
 from flask_restful import Api
 from flask_bcrypt import Bcrypt
 from flask_mysqldb import MySQL
@@ -28,17 +28,43 @@ CORS(app)
 
 mysql = MySQL(app)
 
+class User:
+    def __init__(self, id, email, password):
+        self.id = id
+        self.email = email
+        self.password = password
 
-@app.route("/checkLogin", methods=['POST'])
-def checkLogin():
+    def is_active(self):
+        return True
+
+    def is_authenticated(self):
+        return True
+
+    def is_anonymous(self):
+        return False
+
+    def get_id(self):
+        return self.id
+
+
+@app.route("/login", methods=['POST'])
+def login():
+    print(request.json)
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM user WHERE email = %s", (request.json['email'],))
-    rv = cur.fetchall()
-    for res in rv:
-        return jsonify({'Authenticated': bcrypt.check_password_hash(res['password'], request.json['password'])})
+    user = cur.fetchone()
+    if user is not None:
+        print('yote')
+        user = User(user['id'], user['email'], user['password'])
+        if bcrypt.check_password_hash(user.password, request.json['password']):
+            print('yeet')
+            login_user(user)
+            return jsonify({'Authenticated': True}), 200
+    return jsonify({'Authenticated': False}), 401
 
 
 @app.route("/changePassword", methods=['POST'])
+@login_required
 def changePassword():
     cur = mysql.connection.cursor()
     cur.execute("SELECT password FROM user WHERE id = %s", (request.json['userId'],))
@@ -70,6 +96,7 @@ def createUser():
 
 # Get a user by Id
 @app.route("/getUserById", methods=['GET'])
+@login_required
 def getUserById():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM user WHERE id = %s", (request.args.get('id'),))
@@ -83,6 +110,7 @@ def getUserById():
 
 # Get a user by username
 @app.route("/getUserByUsername", methods=['GET'])
+@login_required
 def getUserByUsername():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM user WHERE username = %s", (request.args.get('username'),))
@@ -112,6 +140,7 @@ def getUserByEmail():
 
 # Update a user
 @app.route("/updateUser", methods=['POST'])
+@login_required
 def updateUser():
     cur = mysql.connection.cursor()
     cur.execute(
@@ -125,6 +154,7 @@ def updateUser():
 
 # Delete a user
 @app.route("/deleteUser", methods=['DELETE'])
+@login_required
 def deleteUser():
     cur = mysql.connection.cursor()
     cur.execute("DELETE FROM user WHERE id = %s", (request.args.get('id'),))
@@ -134,6 +164,7 @@ def deleteUser():
 
 
 @app.route("/getTextAudio", methods=['GET'])
+@login_required
 def getTextAudio():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM textAudio WHERE labeled = 0 group by id asc limit 1")
@@ -155,6 +186,7 @@ def getTextAudio():
 
 
 @app.route("/updateTextAudio", methods=['POST'])
+@login_required
 def updateTextAudio():
     cur = mysql.connection.cursor()
     cur.execute(
@@ -167,6 +199,7 @@ def updateTextAudio():
 
 
 @app.route("/getTextAudios", methods=['GET'])
+@login_required
 def getTextAudios():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM textAudio")
@@ -190,6 +223,7 @@ def getTextAudios():
 
 
 @app.route("/getSpeaker", methods=['GET'])
+@login_required
 def getSpeaker():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM speaker WHERE speakerId = %s", (request.args.get('speakerId'),))
@@ -203,6 +237,7 @@ def getSpeaker():
 
 
 @app.route("/getTenNonLabeledTextAudios", methods=['GET'])
+@login_required
 def getTenNonLabeledTextAudios():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM textAudio where labeled = 0 group by id asc limit 10")
@@ -221,6 +256,7 @@ def getTenNonLabeledTextAudios():
 
 # Get textAudioIndex by labeled type
 @app.route("/getTextAudioIndexesByLabeledType", methods=['GET'])
+@login_required
 def getTextAudioIndexesByLabeledType():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM textAudioIndex WHERE labeled = %s", (request.args.get('labeledType'),))
@@ -240,6 +276,7 @@ def getTextAudioIndexesByLabeledType():
 
 
 @app.route("/createUserAndTextAudio", methods=['POST'])
+@login_required
 def createUserAndTextAudio():
     cur = mysql.connection.cursor()
     cur.execute(
@@ -252,6 +289,7 @@ def createUserAndTextAudio():
 
 # Get top five users by labeling amount
 @app.route("/getTopFive", methods=['GET', 'OPTIONS'])
+@login_required
 def getTopFive():
     cur = mysql.connection.cursor()
     cur.execute(
@@ -269,6 +307,7 @@ def getTopFive():
 
 # Get sums of labeled
 @app.route("/getLabeledSums", methods=['GET'])
+@login_required
 def getLabeledSums():
     cur = mysql.connection.cursor()
     cur.execute("SELECT COUNT(id) FROM textAudio WHERE correct != 0")
@@ -283,6 +322,7 @@ def getLabeledSums():
 
 # Create avatar
 @app.route("/createAvatar", methods=['POST'])
+@login_required
 def createAvatar():
     cur = mysql.connection.cursor()
     cur.execute("DELETE FROM avatar WHERE avatar.userId = %s", (request.json['userId'],))
@@ -296,6 +336,7 @@ def createAvatar():
 
 # Get avatar
 @app.route("/getAvatar", methods=['GET'])
+@login_required
 def getAvatar():
     cur = mysql.connection.cursor()
     cur.execute("SELECT avatar FROM avatar WHERE userId = %s", (request.args.get('userId'),))
@@ -305,6 +346,7 @@ def getAvatar():
 
 
 @app.route("/createRecording", methods=['POST'])
+@login_required
 def createRecording():
     cur = mysql.connection.cursor()
     cur.execute("INSERT INTO recordings(text, userId, audio) VALUES(%s, %s, %s)",
@@ -315,8 +357,27 @@ def createRecording():
 
 
 @app.route("/getAudio", methods=['GET', 'OPTIONS'])
+@login_required
 def getAudio():
     return send_from_directory('C:\\Users\\Jonas\\Documents\\data\\' + request.args.get('id'), 'audio.wav')
+
+
+@loginManager.user_loader
+def load_user(user_id):
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM user WHERE id = %s", (user_id,))
+    usr = cur.fetchone()
+    if usr is not None:
+        return User(usr['id'], usr['email'], usr['password'])
+    else:
+        return None
+
+
+def get_user_for_login_data(email, password):
+    user = User
+    user.email = email
+    user.password = password
+    return user
 
 
 if __name__ == '__main__':
