@@ -51,15 +51,12 @@ class User:
 
 @app.route("/login", methods=['POST'])
 def login():
-    print(request.json)
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM user WHERE email = %s", (request.json['email'],))
     user = cur.fetchone()
     if user is not None:
-        print('yote')
         user = User(user['id'], user['email'], user['password'])
         if bcrypt.check_password_hash(user.password, request.json['password']):
-            print('yeet')
             login_user(user)
             return jsonify({'Authenticated': True}), 200
     else:
