@@ -5,6 +5,7 @@ from flask_login import login_required, login_user, LoginManager
 from flask_restful import Api
 from flask_bcrypt import Bcrypt
 from flask_mysqldb import MySQL
+from functools import wraps
 import json
 
 app = Flask(__name__)
@@ -27,6 +28,7 @@ bcrypt = Bcrypt(app)
 CORS(app)
 
 mysql = MySQL(app)
+
 
 class User:
     def __init__(self, id, email, password):
@@ -60,7 +62,28 @@ def login():
             print('yeet')
             login_user(user)
             return jsonify({'Authenticated': True}), 200
-    return jsonify({'Authenticated': False}), 401
+    else:
+        return jsonify({'Authenticated': False}), 401
+
+
+def login_required(f):
+    @wraps(f)
+    def wrapped_view(**kwargs):
+        auth = request.authorization
+        user = None
+        if auth is not None:
+            cur = mysql.connection.cursor()
+            cur.execute("SELECT * FROM user WHERE email = %s", (auth.username,))
+            user = cur.fetchone()
+        if user is not None:
+            if not bcrypt.check_password_hash(user['password'], auth.password):
+                return ('Unauthorized', 401, {
+                    'WWW-Authenticate': 'Basic realm="Login Required"'
+                })
+
+        return f(**kwargs)
+
+    return wrapped_view
 
 
 @app.route("/changePassword", methods=['POST'])
