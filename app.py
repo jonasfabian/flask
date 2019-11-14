@@ -33,6 +33,8 @@ CORS(app)
 mysql = MySQL(app)
 
 
+# FIXME most methods should e lowercased for codestyle consistencies
+
 class User:
     def __init__(self, id, email, password):
         self.id = id
