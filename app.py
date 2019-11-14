@@ -8,6 +8,8 @@ from flask_mysqldb import MySQL
 from functools import wraps
 import json
 
+from config import baseDir
+
 app = Flask(__name__)
 api = Api(app)
 app.secret_key = b'myzFrIhsQHIGDWSIHbtIL6QPTGAqvxS5'
@@ -379,7 +381,7 @@ def createRecording():
 @app.route("/getAudio", methods=['GET', 'OPTIONS'])
 @login_required
 def getAudio():
-    return send_from_directory('C:\\Users\\Jonas\\Documents\\data\\' + request.args.get('id'), 'audio.wav')
+    return send_from_directory(baseDir + request.args.get('id'), 'audio.wav')
 
 
 @loginManager.user_loader

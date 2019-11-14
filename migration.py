@@ -1,6 +1,9 @@
-import mysql.connector as mariadb
 import os
 from xml.dom import minidom
+
+import mysql.connector as mariadb
+
+from config import baseDir
 from speaker import Speaker
 
 dataBase = mariadb.connect(
@@ -14,16 +17,16 @@ cursor = dataBase.cursor()
 
 def searchDirectories():
     print('Loading...')
-    entries = os.scandir("C:\\Users\\Jonas\\Documents\\data\\")
+    entries = os.scandir(baseDir)
     for entry in entries:
-        for fileData in os.listdir("C:\\Users\\Jonas\\Documents\\data\\" + entry.name + "\\"):
+        for fileData in os.listdir(baseDir + entry.name + "/"):
             if fileData.endswith(".xml"):
                 extractDataToDB(entry.name)
     print('Done!')
 
 
 def extractDataToDB(folderNumber: str):
-    file = open('C:\\Users\\Jonas\\Documents\\data\\' + folderNumber + '\\indexes.xml')
+    file = open(baseDir + folderNumber + '/indexes.xml')
     xml_doc = minidom.parse(file)
     audio_item_list = xml_doc.getElementsByTagName('tli')
     audio_time = {}
