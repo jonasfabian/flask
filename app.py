@@ -1,14 +1,15 @@
-from datetime import datetime
-from flask import Flask, request, jsonify, send_from_directory, Response
-from flask_cors import CORS
-from flask_login import login_required, login_user, LoginManager
-from flask_restful import Api
-from flask_bcrypt import Bcrypt
-from flask_mysqldb import MySQL
-from functools import wraps
 import json
+from datetime import datetime
+from functools import wraps
 
-from config import baseDir
+from flask import Flask, request, jsonify, send_from_directory, Response
+from flask_bcrypt import Bcrypt
+from flask_cors import CORS
+from flask_login import login_user, LoginManager
+from flask_mysqldb import MySQL
+from flask_restful import Api
+
+from config import baseDir, user, passwd, database
 
 app = Flask(__name__)
 api = Api(app)
@@ -17,9 +18,9 @@ app.debug = True
 
 # Config MySQL
 app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'password'
-app.config['MYSQL_DB'] = 'labeling-tool'
+app.config['MYSQL_USER'] = user
+app.config['MYSQL_PASSWORD'] = passwd
+app.config['MYSQL_DB'] = database
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
 loginManager = LoginManager()

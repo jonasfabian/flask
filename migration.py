@@ -3,14 +3,14 @@ from xml.dom import minidom
 
 import mysql.connector as mariadb
 
-from config import baseDir
+from config import baseDir, database, passwd, user
 from speaker import Speaker
 
 dataBase = mariadb.connect(
     host='localhost',
-    user='root',
-    passwd='password',
-    database='labeling-tool'
+    user=user,
+    passwd=passwd,
+    database=database
 )
 cursor = dataBase.cursor()
 

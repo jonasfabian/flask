@@ -1,10 +1,12 @@
 import mysql.connector
 
+from config import user, passwd, database
+
 dataBase = mysql.connector.connect(
     host='localhost',
-    user='root',
-    passwd='password',
-    database='labeling-tool'
+    user=user,
+    passwd=passwd,
+    database=database
 )
 
 cursor = dataBase.cursor()
@@ -22,9 +24,9 @@ def createDatabase():
     dataBase.close()
     dataBase = mysql.connector.connect(
         host='localhost',
-        user='root',
-        passwd='password',
-        database='labeling-tool'
+        user=user,
+        passwd=passwd,
+        database=database
     )
     cursor = dataBase.cursor()
 
