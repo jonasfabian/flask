@@ -33,7 +33,7 @@ CORS(app)
 mysql = MySQL(app)
 
 
-# FIXME most methods should e lowercased for codestyle consistencies
+# TODO most methods can be simplified or delete -> depends on frontend
 
 class User:
     def __init__(self, id, email, password):

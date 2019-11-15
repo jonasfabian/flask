@@ -12,8 +12,6 @@ dataBase = mysql.connector.connect(
 cursor = dataBase.cursor()
 
 
-# FIXME most methods should e lowercased for codestyle consistencies
-
 def dropDatabase():
     cursor.execute("DROP DATABASE IF EXISTS `labeling-tool`")
     print("Dropped database")
