@@ -1,12 +1,13 @@
 import json
 from datetime import datetime
+from functools import wraps
+
 from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_login import login_user, LoginManager
 from flask_mysqldb import MySQL
 from flask_restful import Api
-from functools import wraps
 
 from config import baseDir, user, passwd, database
 
@@ -32,8 +33,6 @@ CORS(app)
 mysql = MySQL(app)
 
 
-# TODO most methods can be simplified or delete -> depends on frontend
-
 class User:
     def __init__(self, id, email, password):
         self.id = id
@@ -56,15 +55,14 @@ class User:
 @app.route("/login", methods=['POST'])
 def login():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM user WHERE email = %s", (request.json['email'],))
+    cur.execute("SELECT * FROM user WHERE email = %s", (request.json['email']))
     user = cur.fetchone()
     if user is not None:
         user = User(user['id'], user['email'], user['password'])
         if bcrypt.check_password_hash(user.password, request.json['password']):
             login_user(user)
             return jsonify({'Authenticated': True}), 200
-    else:
-        return jsonify({'Authenticated': False}), 401
+    return jsonify({'Authenticated': False}), 401
 
 
 def login_required(f):
@@ -74,14 +72,11 @@ def login_required(f):
         user = None
         if auth is not None:
             cur = mysql.connection.cursor()
-            cur.execute("SELECT * FROM user WHERE email = %s", (auth.username,))
+            cur.execute("SELECT * FROM user WHERE email = %s", auth.username)
             user = cur.fetchone()
         if user is not None:
             if not bcrypt.check_password_hash(user['password'], auth.password):
-                return ('Unauthorized', 401, {
-                    'WWW-Authenticate': 'Basic realm="Login Required"'
-                })
-
+                return ('Unauthorized', 401, {'WWW-Authenticate': 'Basic realm="Login Required"'})
         return f(**kwargs)
 
     return wrapped_view
@@ -91,7 +86,7 @@ def login_required(f):
 @login_required
 def changePassword():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT password FROM user WHERE id = %s", (request.json['userId'],))
+    cur.execute("SELECT password FROM user WHERE id = %s", (request.json['userId']))
     oldPassword = cur.fetchone()
     newPassword = bcrypt.generate_password_hash(request.json['newPassword'])
     if bcrypt.check_password_hash(oldPassword['password'], request.json['password']):
@@ -121,14 +116,13 @@ def createUser():
 def getUserByEmail():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM user WHERE email = %s", (request.args.get('email'),))
-    rv = cur.fetchall()
-    content = {}
-    for result in rv:
-        content = {'id': result['id'], 'firstName': result['firstName'], 'lastName': result['lastName'],
-                   'email': result['email'],
-                   'username': result['username'], 'avatarVersion': result['avatarVersion'], 'canton': result['canton']}
+    result = cur.fetchone()
+    if result is not None:
+        result = {'id': result['id'], 'firstName': result['firstName'], 'lastName': result['lastName'],
+                  'email': result['email'], 'username': result['username'], 'avatarVersion': result['avatarVersion'],
+                  'canton': result['canton']}
     cur.close()
-    return jsonify(content)
+    return jsonify(result)
 
 
 @app.route("/updateUser", methods=['POST'])
@@ -137,8 +131,8 @@ def updateUser():
     cur = mysql.connection.cursor()
     cur.execute(
         "UPDATE user SET firstName = %s, lastName = %s, email = %s, username = %s, avatarVersion = %s, canton = %s WHERE id = %s",
-        (request.json['firstName'], request.json['lastName'], request.json['email'],
-         request.json['username'], request.json['avatarVersion'], request.json['canton'], request.json['id']), )
+        (request.json['firstName'], request.json['lastName'], request.json['email'], request.json['username'],
+         request.json['avatarVersion'], request.json['canton'], request.json['id']), )
     mysql.connection.commit()
     cur.close()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
@@ -165,17 +159,9 @@ def getTextAudios():
     rv = cur.fetchall()
     payload = []
     for result in rv:
-        content = {
-            'id': result['id'],
-            'audioStart': result['audioStart'],
-            'audioEnd': result['audioEnd'],
-            'text': result['text'],
-            'fileId': result['fileId'],
-            'speaker': result['speaker'],
-            'labeled': result['labeled'],
-            'correct': result['correct'],
-            'wrong': result['wrong']
-        }
+        content = {'id': result['id'], 'audioStart': result['audioStart'], 'audioEnd': result['audioEnd'],
+                   'text': result['text'], 'fileId': result['fileId'], 'speaker': result['speaker'],
+                   'labeled': result['labeled'], 'correct': result['correct'], 'wrong': result['wrong']}
         payload.append(content)
     cur.close()
     return jsonify(payload)
@@ -189,11 +175,9 @@ def getTenNonLabeledTextAudios():
     rv = cur.fetchall()
     payload = []
     for vi in rv:
-        content = {
-            'id': vi['id'], 'audioStart': vi['audioStart'], 'audioEnd': vi['audioEnd'], 'text': vi['text'],
-            'fileId': vi['fileId'], 'speaker': vi['speaker'],
-            'labeled': vi['labeled'], 'correct': vi['correct'], 'wrong': vi['wrong']
-        }
+        content = {'id': vi['id'], 'audioStart': vi['audioStart'], 'audioEnd': vi['audioEnd'], 'text': vi['text'],
+                   'fileId': vi['fileId'], 'speaker': vi['speaker'], 'labeled': vi['labeled'], 'correct': vi['correct'],
+                   'wrong': vi['wrong']}
         payload.append(content)
     cur.close()
     return jsonify(payload)
@@ -203,9 +187,8 @@ def getTenNonLabeledTextAudios():
 @login_required
 def createUserAndTextAudio():
     cur = mysql.connection.cursor()
-    cur.execute(
-        "INSERT INTO userAndTextAudio(userId, textAudioId, time) VALUES(%s, %s, %s)",
-        (request.json['userId'], request.json['textAudioId'], datetime.now().strftime('%Y-%m-%d %H:%M:%S'),))
+    cur.execute("INSERT INTO userAndTextAudio(userId, textAudioId, time) VALUES(%s, %s, %s)",
+                (request.json['userId'], request.json['textAudioId'], datetime.now().strftime('%Y-%m-%d %H:%M:%S'),))
     mysql.connection.commit()
     cur.close()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
@@ -220,9 +203,8 @@ def getTopFive():
     rv = cur.fetchall()
     payload = []
     for result in rv:
-        content = {
-            'id': result['id'], 'username': result['username'], 'count': result['COUNT(userAndTextAudio.userId)']
-        }
+        content = {'id': result['id'], 'username': result['username'],
+                   'count': result['COUNT(userAndTextAudio.userId)']}
         payload.append(content)
     cur.close()
     return jsonify(payload)
@@ -246,7 +228,7 @@ def getLabeledSums():
 @login_required
 def createAvatar():
     cur = mysql.connection.cursor()
-    cur.execute("DELETE FROM avatar WHERE avatar.userId = %s", (request.json['userId'],))
+    cur.execute("DELETE FROM avatar WHERE avatar.userId = %s", (request.json['userId']))
     mysql.connection.commit()
     cur.execute("INSERT INTO avatar(userId, avatar) VALUES(%s, %s)",
                 (request.json['userId'], json.dumps(request.json['avatar'])))
