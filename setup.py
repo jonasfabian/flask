@@ -93,11 +93,7 @@ def createTables():
         PRIMARY KEY (id)) ENGINE = INNODB DEFAULT CHARSET = UTF8MB4""")
 
 
-def main():
+if __name__ == "__main__":
     dropDatabase()
     createDatabase()
     createTables()
-
-
-if __name__ == "__main__":
-    main()
