@@ -54,7 +54,6 @@ class User:
 
 @app.route("/login", methods=['POST'])
 def login():
-    print(request.json['email'])
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM user WHERE email = %s", [request.json['email']])
     user = cur.fetchone()
