@@ -54,8 +54,9 @@ class User:
 
 @app.route("/login", methods=['POST'])
 def login():
+    print(request.json['email'])
     cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM user WHERE email = %s", (request.json['email']))
+    cur.execute("SELECT * FROM user WHERE email = %s", [request.json['email']])
     user = cur.fetchone()
     if user is not None:
         user = User(user['id'], user['email'], user['password'])
@@ -72,7 +73,7 @@ def login_required(f):
         user = None
         if auth is not None:
             cur = mysql.connection.cursor()
-            cur.execute("SELECT * FROM user WHERE email = %s", auth.username)
+            cur.execute("SELECT * FROM user WHERE email = %s", [auth.username])
             user = cur.fetchone()
         if user is not None:
             if not bcrypt.check_password_hash(user['password'], auth.password):
@@ -86,7 +87,7 @@ def login_required(f):
 @login_required
 def changePassword():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT password FROM user WHERE id = %s", (request.json['userId']))
+    cur.execute("SELECT password FROM user WHERE id = %s", [request.json['userId']])
     oldPassword = cur.fetchone()
     newPassword = bcrypt.generate_password_hash(request.json['newPassword'])
     if bcrypt.check_password_hash(oldPassword['password'], request.json['password']):
@@ -105,8 +106,8 @@ def createUser():
     cur = mysql.connection.cursor()
     cur.execute(
         "INSERT INTO user(firstName, lastName, email, username, avatarVersion, password, canton) VALUES(%s, %s, %s, %s, %s, %s, %s)",
-        (request.json['firstName'], request.json['lastName'], request.json['email'], request.json['username'],
-         request.json['avatarVersion'], pw, request.json['canton']))
+        [request.json['firstName'], request.json['lastName'], request.json['email'], request.json['username'],
+         request.json['avatarVersion'], pw, request.json['canton']])
     mysql.connection.commit()
     cur.close()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
@@ -115,7 +116,7 @@ def createUser():
 @app.route("/getUserByEmail", methods=['GET'])
 def getUserByEmail():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM user WHERE email = %s", (request.args.get('email'),))
+    cur.execute("SELECT * FROM user WHERE email = %s", [request.args.get('email'),])
     result = cur.fetchone()
     if result is not None:
         result = {'id': result['id'], 'firstName': result['firstName'], 'lastName': result['lastName'],
@@ -131,8 +132,8 @@ def updateUser():
     cur = mysql.connection.cursor()
     cur.execute(
         "UPDATE user SET firstName = %s, lastName = %s, email = %s, username = %s, avatarVersion = %s, canton = %s WHERE id = %s",
-        (request.json['firstName'], request.json['lastName'], request.json['email'], request.json['username'],
-         request.json['avatarVersion'], request.json['canton'], request.json['id']), )
+        [request.json['firstName'], request.json['lastName'], request.json['email'], request.json['username'],
+         request.json['avatarVersion'], request.json['canton'], request.json['id']], )
     mysql.connection.commit()
     cur.close()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
@@ -144,8 +145,8 @@ def updateTextAudio():
     cur = mysql.connection.cursor()
     cur.execute(
         "UPDATE textAudio SET audioStart = %s, audioEnd = %s, text = %s, labeled = %s, correct = %s, wrong = %s WHERE id = %s",
-        (request.json['audioStart'], request.json['audioEnd'], request.json['text'], request.json['labeled'],
-         request.json['correct'], request.json['wrong'], request.json['id']), )
+        [request.json['audioStart'], request.json['audioEnd'], request.json['text'], request.json['labeled'],
+         request.json['correct'], request.json['wrong'], request.json['id']], )
     mysql.connection.commit()
     cur.close()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
@@ -188,7 +189,7 @@ def getTenNonLabeledTextAudios():
 def createUserAndTextAudio():
     cur = mysql.connection.cursor()
     cur.execute("INSERT INTO userAndTextAudio(userId, textAudioId, time) VALUES(%s, %s, %s)",
-                (request.json['userId'], request.json['textAudioId'], datetime.now().strftime('%Y-%m-%d %H:%M:%S'),))
+                [request.json['userId'], request.json['textAudioId'], datetime.now().strftime('%Y-%m-%d %H:%M:%S'),])
     mysql.connection.commit()
     cur.close()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
@@ -228,10 +229,10 @@ def getLabeledSums():
 @login_required
 def createAvatar():
     cur = mysql.connection.cursor()
-    cur.execute("DELETE FROM avatar WHERE avatar.userId = %s", (request.json['userId']))
+    cur.execute("DELETE FROM avatar WHERE avatar.userId = %s", [request.json['userId']])
     mysql.connection.commit()
     cur.execute("INSERT INTO avatar(userId, avatar) VALUES(%s, %s)",
-                (request.json['userId'], json.dumps(request.json['avatar'])))
+                [request.json['userId'], json.dumps(request.json['avatar'])])
     mysql.connection.commit()
     cur.close()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
@@ -241,7 +242,7 @@ def createAvatar():
 @login_required
 def getAvatar():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT avatar FROM avatar WHERE userId = %s", (request.args.get('userId'),))
+    cur.execute("SELECT avatar FROM avatar WHERE userId = %s", [request.args.get('userId'),])
     avatar = cur.fetchone()
     cur.close()
     return Response(avatar['avatar'], mimetype='image/jpg')
@@ -252,7 +253,7 @@ def getAvatar():
 def createRecording():
     cur = mysql.connection.cursor()
     cur.execute("INSERT INTO recordings(text, userId, audio) VALUES(%s, %s, %s)",
-                (request.json['text'], request.json['userId'], json.dumps(request.json['audio']),))
+                [request.json['text'], request.json['userId'], json.dumps(request.json['audio']),])
     mysql.connection.commit()
     cur.close()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
