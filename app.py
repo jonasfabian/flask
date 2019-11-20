@@ -96,7 +96,7 @@ def changePassword():
         return jsonify({'Authenticated': True}), 200
     else:
         cur.close()
-        return jsonify({'Authenticated': False}), 401
+        return jsonify({'Authenticated': False}), 400
 
 
 @app.route("/createUser", methods=['POST'])
