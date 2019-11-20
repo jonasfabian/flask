@@ -90,7 +90,7 @@ def changePassword():
     oldPassword = cur.fetchone()
     newPassword = bcrypt.generate_password_hash(request.json['newPassword'])
     if bcrypt.check_password_hash(oldPassword['password'], request.json['password']):
-        cur.execute("INSERT INTO user(password) VALUES(%s)", newPassword)
+        cur.execute("UPDATE user set password = %s where user.id = %s", [newPassword, request.json['userId']])
         mysql.connection.commit()
         cur.close()
         return jsonify({'Authenticated': True}), 200
@@ -115,7 +115,7 @@ def createUser():
 @app.route("/getUserByEmail", methods=['GET'])
 def getUserByEmail():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM user WHERE email = %s", [request.args.get('email'),])
+    cur.execute("SELECT * FROM user WHERE email = %s", [request.args.get('email'), ])
     result = cur.fetchone()
     if result is not None:
         result = {'id': result['id'], 'firstName': result['firstName'], 'lastName': result['lastName'],
@@ -188,7 +188,7 @@ def getTenNonLabeledTextAudios():
 def createUserAndTextAudio():
     cur = mysql.connection.cursor()
     cur.execute("INSERT INTO userAndTextAudio(userId, textAudioId, time) VALUES(%s, %s, %s)",
-                [request.json['userId'], request.json['textAudioId'], datetime.now().strftime('%Y-%m-%d %H:%M:%S'),])
+                [request.json['userId'], request.json['textAudioId'], datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ])
     mysql.connection.commit()
     cur.close()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
@@ -241,7 +241,7 @@ def createAvatar():
 @login_required
 def getAvatar():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT avatar FROM avatar WHERE userId = %s", [request.args.get('userId'),])
+    cur.execute("SELECT avatar FROM avatar WHERE userId = %s", [request.args.get('userId'), ])
     avatar = cur.fetchone()
     cur.close()
     return Response(avatar['avatar'], mimetype='image/jpg')
@@ -252,7 +252,7 @@ def getAvatar():
 def createRecording():
     cur = mysql.connection.cursor()
     cur.execute("INSERT INTO recordings(text, userId, audio) VALUES(%s, %s, %s)",
-                [request.json['text'], request.json['userId'], json.dumps(request.json['audio']),])
+                [request.json['text'], request.json['userId'], json.dumps(request.json['audio']), ])
     mysql.connection.commit()
     cur.close()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
