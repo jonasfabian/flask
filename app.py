@@ -258,6 +258,16 @@ def createRecording():
     cur.close()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
+@app.route("/getRecording", methods=['GET'])
+@login_required
+def getRecording():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT audio FROM recordings WHERE id = %s",
+                [request.args.get('id')])
+    audio = cur.fetchone()
+    cur.close()
+    return Response(audio['audio'], mimetype='audio/webm;codecs=opus')
+
 
 @app.route("/getAudio", methods=['GET', 'OPTIONS'])
 @login_required
