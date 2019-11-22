@@ -104,9 +104,9 @@ def createUser():
     pw = bcrypt.generate_password_hash(request.json['password']).decode('utf-8')
     cur = mysql.connection.cursor()
     cur.execute(
-        "INSERT INTO user(firstName, lastName, email, username, avatarVersion, password, canton) VALUES(%s, %s, %s, %s, %s, %s, %s)",
+        "INSERT INTO user(firstName, lastName, email, username,  password, canton) VALUES(%s, %s, %s, %s, %s, %s, %s)",
         [request.json['firstName'], request.json['lastName'], request.json['email'], request.json['username'],
-         request.json['avatarVersion'], pw, request.json['canton']])
+         pw, request.json['canton']])
     mysql.connection.commit()
     cur.close()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
@@ -119,7 +119,7 @@ def getUserByEmail():
     result = cur.fetchone()
     if result is not None:
         result = {'id': result['id'], 'firstName': result['firstName'], 'lastName': result['lastName'],
-                  'email': result['email'], 'username': result['username'], 'avatarVersion': result['avatarVersion'],
+                  'email': result['email'], 'username': result['username'],
                   'canton': result['canton']}
     cur.close()
     return jsonify(result)
@@ -130,9 +130,9 @@ def getUserByEmail():
 def updateUser():
     cur = mysql.connection.cursor()
     cur.execute(
-        "UPDATE user SET firstName = %s, lastName = %s, email = %s, username = %s, avatarVersion = %s, canton = %s WHERE id = %s",
+        "UPDATE user SET firstName = %s, lastName = %s, email = %s, username = %s,  canton = %s WHERE id = %s",
         [request.json['firstName'], request.json['lastName'], request.json['email'], request.json['username'],
-         request.json['avatarVersion'], request.json['canton'], request.json['id']], )
+         request.json['canton'], request.json['id']], )
     mysql.connection.commit()
     cur.close()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
