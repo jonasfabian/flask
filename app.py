@@ -251,8 +251,9 @@ def getAvatar():
 @login_required
 def createRecording():
     cur = mysql.connection.cursor()
+    data = json.loads(request.form['data'])
     cur.execute("INSERT INTO recordings(text, userId, audio) VALUES(%s, %s, %s)",
-                [request.json['text'], request.json['userId'], json.dumps(request.json['audio']), ])
+                [data['text'], data['userId'], request.files['file'].read(), ])
     mysql.connection.commit()
     cur.close()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
