@@ -258,9 +258,34 @@ def createRecording():
     cur.close()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
-@app.route("/getRecording", methods=['GET'])
+
+@app.route("/getRecordingDataById", methods=['GET'])
 @login_required
-def getRecording():
+def getRecordingDataById():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT id, text, userId FROM recordings WHERE id = %s",
+                [request.args.get('id')])
+    recording = cur.fetchone()
+    cur.close()
+    return jsonify({'id': recording['id'], 'text': recording['text'], 'userId': recording['userId']})
+
+@app.route("/getAllRecordingData", methods=['GET'])
+@login_required
+def getAllRecordingData():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT id, text, userId FROM recordings",)
+    recording = cur.fetchall()
+    cur.close()
+    payload = []
+    for record in recording:
+        print(record)
+        payload.append(record)
+    return jsonify(payload)
+
+
+@app.route("/getRecordingAudioById", methods=['GET'])
+@login_required
+def getRecordingAudioById():
     cur = mysql.connection.cursor()
     cur.execute("SELECT audio FROM recordings WHERE id = %s",
                 [request.args.get('id')])
