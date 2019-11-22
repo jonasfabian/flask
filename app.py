@@ -104,7 +104,7 @@ def createUser():
     pw = bcrypt.generate_password_hash(request.json['password']).decode('utf-8')
     cur = mysql.connection.cursor()
     cur.execute(
-        "INSERT INTO user(firstName, lastName, email, username,  password, canton) VALUES(%s, %s, %s, %s, %s, %s, %s)",
+        "INSERT INTO user(firstName, lastName, email, username,  password, canton) VALUES(%s, %s, %s, %s, %s, %s)",
         [request.json['firstName'], request.json['lastName'], request.json['email'], request.json['username'],
          pw, request.json['canton']])
     mysql.connection.commit()
