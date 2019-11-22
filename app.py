@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from functools import wraps
 
-from flask import Flask, request, jsonify, send_from_directory, Response
+from flask import Flask, request, jsonify, send_from_directory
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_login import login_user, LoginManager
@@ -222,29 +222,6 @@ def getLabeledSums():
     total = cur.fetchone()
     cur.close()
     return jsonify({'correct': correct['COUNT(id)'], 'wrong': wrong['COUNT(id)'], 'total': total['COUNT(id)']})
-
-
-@app.route("/createAvatar", methods=['POST'])
-@login_required
-def createAvatar():
-    cur = mysql.connection.cursor()
-    cur.execute("DELETE FROM avatar WHERE avatar.userId = %s", [request.json['userId']])
-    mysql.connection.commit()
-    cur.execute("INSERT INTO avatar(userId, avatar) VALUES(%s, %s)",
-                [request.json['userId'], json.dumps(request.json['avatar'])])
-    mysql.connection.commit()
-    cur.close()
-    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
-
-
-@app.route("/getAvatar", methods=['GET'])
-@login_required
-def getAvatar():
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT avatar FROM avatar WHERE userId = %s", [request.args.get('userId'), ])
-    avatar = cur.fetchone()
-    cur.close()
-    return Response(avatar['avatar'], mimetype='image/jpg')
 
 
 @app.route("/createRecording", methods=['POST'])
