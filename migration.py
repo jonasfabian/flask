@@ -49,6 +49,7 @@ def extract_data_to_db(folderNumber: str):
             'ud-information')
         if len(dialectElement) > 0:
             dialect = dialectElement[0].firstChild.nodeValue
+        #     TODO do we actually need this anymore
         cursor.execute("INSERT INTO speaker (speakerId, sex, languageUsed, dialect) VALUES (%s, %s, %s, %s)",
                        (speakerId, sex, languageUsed, dialect))
         dataBase.commit()

@@ -32,6 +32,7 @@ def createDatabase():
 
 
 def createTables():
+    # TODO do we need this anymore
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS speaker (
         id BIGINT NOT NULL AUTO_INCREMENT,
@@ -40,7 +41,7 @@ def createTables():
         languageUsed VARCHAR(45),
         dialect VARCHAR(45),
         PRIMARY KEY (id)) ENGINE = INNODB DEFAULT CHARSET = UTF8MB4""")
-
+    # TODO avatar versoin could be removed
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS user (
         id BIGINT NOT NULL AUTO_INCREMENT,
@@ -53,7 +54,7 @@ def createTables():
         canton VARCHAR(45),
         PRIMARY KEY (id),
         UNIQUE KEY email (email)) ENGINE = INNODB DEFAULT CHARSET = UTF8MB4""")
-
+    # TODO not needed
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS avatar (
         id BIGINT NOT NULL AUTO_INCREMENT,
