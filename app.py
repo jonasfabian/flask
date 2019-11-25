@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from functools import wraps
 
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_login import login_user, LoginManager
@@ -255,7 +255,6 @@ def getAllRecordingData():
     cur.close()
     payload = []
     for record in recording:
-        print(record)
         payload.append(record)
     return jsonify(payload)
 
@@ -268,13 +267,13 @@ def getRecordingAudioById():
                 [request.args.get('id')])
     audio = cur.fetchone()
     cur.close()
-    return Response(audio['audio'], mimetype='audio/webm;codecs=opus')
+    return Response(audio['audio'], mimetype='audio/ogg')
 
 
 @app.route("/getAudio", methods=['GET', 'OPTIONS'])
 @login_required
 def getAudio():
-    return send_from_directory(baseDir + request.args.get('id'), 'audio.wav')
+    return send_from_directory(baseDir + "\\" + request.args.get('id'), 'audio.wav')
 
 
 @loginManager.user_loader

@@ -18,14 +18,14 @@ def search_directories():
     print('Loading...')
     entries = os.scandir(baseDir)
     for entry in entries:
-        for fileData in os.listdir(baseDir + entry.name + "/"):
+        for fileData in os.listdir(baseDir + "\\" + entry.name):
             if fileData.endswith(".xml"):
                 extract_data_to_db(entry.name)
     print('Done!')
 
 
 def extract_data_to_db(folderNumber: str):
-    file = open(baseDir + folderNumber + '/indexes.xml')
+    file = open(baseDir + "\\" + folderNumber + '\indexes.xml')
     xml_doc = minidom.parse(file)
     audio_item_list = xml_doc.getElementsByTagName('tli')
     audio_time = {}
