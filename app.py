@@ -228,11 +228,47 @@ def getLabeledSums():
 @login_required
 def createRecording():
     cur = mysql.connection.cursor()
+    data = json.loads(request.form['data'])
     cur.execute("INSERT INTO recordings(text, userId, audio) VALUES(%s, %s, %s)",
-                [request.json['text'], request.json['userId'], json.dumps(request.json['audio']), ])
+                [data['text'], data['userId'], request.files['file'].read(), ])
     mysql.connection.commit()
     cur.close()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+
+
+@app.route("/getRecordingDataById", methods=['GET'])
+@login_required
+def getRecordingDataById():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT id, text, userId FROM recordings WHERE id = %s",
+                [request.args.get('id')])
+    recording = cur.fetchone()
+    cur.close()
+    return jsonify({'id': recording['id'], 'text': recording['text'], 'userId': recording['userId']})
+
+@app.route("/getAllRecordingData", methods=['GET'])
+@login_required
+def getAllRecordingData():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT id, text, userId FROM recordings",)
+    recording = cur.fetchall()
+    cur.close()
+    payload = []
+    for record in recording:
+        print(record)
+        payload.append(record)
+    return jsonify(payload)
+
+
+@app.route("/getRecordingAudioById", methods=['GET'])
+@login_required
+def getRecordingAudioById():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT audio FROM recordings WHERE id = %s",
+                [request.args.get('id')])
+    audio = cur.fetchone()
+    cur.close()
+    return Response(audio['audio'], mimetype='audio/webm;codecs=opus')
 
 
 @app.route("/getAudio", methods=['GET', 'OPTIONS'])
