@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from functools import wraps
 
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, redirect
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_login import login_user, LoginManager
@@ -11,9 +11,12 @@ from flask_restful import Api
 
 from config import baseDir, user, passwd, database
 
-app = Flask(__name__)
+app = Flask(__name__,
+            static_folder='static/public/'
+            )
 api = Api(app)
 app.secret_key = b'myzFrIhsQHIGDWSIHbtIL6QPTGAqvxS5'
+app.url_map.strict_slashes = True
 app.debug = True
 
 # Config MySQL
@@ -52,10 +55,14 @@ class User:
         return self.id
 
 
+@app.route("/app")
+def forwardToAngular():
+    return redirect("/speech-to-text-labeling-tool/app/index.html")
+
+
 @app.route("/login", methods=['POST'])
 def login():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM user WHERE email = %s", [request.json['email']])
     user = cur.fetchone()
     if user is not None:
         user = User(user['id'], user['email'], user['password'])
@@ -246,11 +253,12 @@ def getRecordingDataById():
     cur.close()
     return jsonify({'id': recording['id'], 'text': recording['text'], 'userId': recording['userId']})
 
+
 @app.route("/getAllRecordingData", methods=['GET'])
 @login_required
 def getAllRecordingData():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT id, text, userId FROM recordings",)
+    cur.execute("SELECT id, text, userId FROM recordings", )
     recording = cur.fetchall()
     cur.close()
     payload = []
