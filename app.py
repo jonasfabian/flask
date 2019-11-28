@@ -55,6 +55,11 @@ class User:
         return self.id
 
 
+@app.errorhandler(404)
+def page_not_fond(e):
+    return redirect("/speech-to-text-labeling-tool/app/index.html")
+
+
 @app.route("/app")
 def forwardToAngular():
     return redirect("/speech-to-text-labeling-tool/app/index.html")
