@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from functools import wraps
 
+from flask import Flask, request, jsonify, send_from_directory, Response
 from flask import Flask, request, jsonify, send_from_directory, redirect
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
@@ -68,6 +69,10 @@ def forwardToAngular():
 @app.route("/login", methods=['POST'])
 def login():
     cur = mysql.connection.cursor()
+    if '@' in request.json['email']:
+        cur.execute("SELECT * FROM user WHERE email = %s", [request.json['email']])
+    else:
+        cur.execute("SELECT * FROM user WHERE username = %s", [request.json['email']])
     user = cur.fetchone()
     if user is not None:
         user = User(user['id'], user['email'], user['password'])
@@ -113,15 +118,18 @@ def changePassword():
 
 @app.route("/createUser", methods=['POST'])
 def createUser():
-    pw = bcrypt.generate_password_hash(request.json['password']).decode('utf-8')
-    cur = mysql.connection.cursor()
-    cur.execute(
-        "INSERT INTO user(firstName, lastName, email, username,  password, canton) VALUES(%s, %s, %s, %s, %s, %s)",
-        [request.json['firstName'], request.json['lastName'], request.json['email'], request.json['username'],
-         pw, request.json['canton']])
-    mysql.connection.commit()
-    cur.close()
-    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+    if '@' in request.json['username']:
+        return jsonify({'success': False}), 406
+    else:
+        pw = bcrypt.generate_password_hash(request.json['password']).decode('utf-8')
+        cur = mysql.connection.cursor()
+        cur.execute(
+            "INSERT INTO user(firstName, lastName, email, username,  password, canton) VALUES(%s, %s, %s, %s, %s, %s)",
+            [request.json['firstName'], request.json['lastName'], request.json['email'], request.json['username'],
+             pw, request.json['canton']])
+        mysql.connection.commit()
+        cur.close()
+        return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
 @app.route("/getUserByEmail", methods=['GET'])
@@ -137,17 +145,33 @@ def getUserByEmail():
     return jsonify(result)
 
 
+@app.route("/getUserByUsername", methods=['GET'])
+def getUserByUsername():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM user WHERE username = %s", [request.args.get('email'), ])
+    result = cur.fetchone()
+    if result is not None:
+        result = {'id': result['id'], 'firstName': result['firstName'], 'lastName': result['lastName'],
+                  'email': result['email'], 'username': result['username'],
+                  'canton': result['canton']}
+    cur.close()
+    return jsonify(result)
+
+
 @app.route("/updateUser", methods=['POST'])
 @login_required
 def updateUser():
-    cur = mysql.connection.cursor()
-    cur.execute(
-        "UPDATE user SET firstName = %s, lastName = %s, email = %s, username = %s,  canton = %s WHERE id = %s",
-        [request.json['firstName'], request.json['lastName'], request.json['email'], request.json['username'],
-         request.json['canton'], request.json['id']], )
-    mysql.connection.commit()
-    cur.close()
-    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+    if '@' in request.json['username']:
+        return jsonify({'success': False}), 406
+    else:
+        cur = mysql.connection.cursor()
+        cur.execute(
+            "UPDATE user SET firstName = %s, lastName = %s, email = %s, username = %s,  canton = %s WHERE id = %s",
+            [request.json['firstName'], request.json['lastName'], request.json['email'], request.json['username'],
+             request.json['canton'], request.json['id']], )
+        mysql.connection.commit()
+        cur.close()
+        return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
 @app.route("/updateTextAudio", methods=['POST'])
@@ -241,8 +265,9 @@ def getLabeledSums():
 def createRecording():
     cur = mysql.connection.cursor()
     data = json.loads(request.form['data'])
-    cur.execute("INSERT INTO recordings(text, userId, audio) VALUES(%s, %s, %s)",
-                [data['text'], data['userId'], request.files['file'].read(), ])
+    cur.execute("INSERT INTO recordings(text, userId, audio, time) VALUES(%s, %s, %s, %s)",
+                [data['text'], data['userId'], request.files['file'].read(),
+                 datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ])
     mysql.connection.commit()
     cur.close()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
@@ -263,12 +288,12 @@ def getRecordingDataById():
 @login_required
 def getAllRecordingData():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT id, text, userId FROM recordings", )
+    cur.execute(
+        "SELECT recordings.id, recordings.text, user.username, recordings.time FROM recordings JOIN user on user.id = recordings.userId", )
     recording = cur.fetchall()
     cur.close()
     payload = []
     for record in recording:
-        print(record)
         payload.append(record)
     return jsonify(payload)
 
@@ -281,13 +306,13 @@ def getRecordingAudioById():
                 [request.args.get('id')])
     audio = cur.fetchone()
     cur.close()
-    return Response(audio['audio'], mimetype='audio/webm;codecs=opus')
+    return Response(audio['audio'], mimetype='audio/ogg')
 
 
 @app.route("/getAudio", methods=['GET', 'OPTIONS'])
 @login_required
 def getAudio():
-    return send_from_directory(baseDir + request.args.get('id'), 'audio.wav')
+    return send_from_directory(baseDir + "\\" + request.args.get('id'), 'audio.wav')
 
 
 @loginManager.user_loader
