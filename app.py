@@ -104,15 +104,18 @@ def changePassword():
 
 @app.route("/createUser", methods=['POST'])
 def createUser():
-    pw = bcrypt.generate_password_hash(request.json['password']).decode('utf-8')
-    cur = mysql.connection.cursor()
-    cur.execute(
-        "INSERT INTO user(firstName, lastName, email, username,  password, canton) VALUES(%s, %s, %s, %s, %s, %s)",
-        [request.json['firstName'], request.json['lastName'], request.json['email'], request.json['username'],
-         pw, request.json['canton']])
-    mysql.connection.commit()
-    cur.close()
-    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+    if '@' in request.json['username']:
+        return jsonify({'success': False}), 406
+    else:
+        pw = bcrypt.generate_password_hash(request.json['password']).decode('utf-8')
+        cur = mysql.connection.cursor()
+        cur.execute(
+            "INSERT INTO user(firstName, lastName, email, username,  password, canton) VALUES(%s, %s, %s, %s, %s, %s)",
+            [request.json['firstName'], request.json['lastName'], request.json['email'], request.json['username'],
+             pw, request.json['canton']])
+        mysql.connection.commit()
+        cur.close()
+        return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
 @app.route("/getUserByEmail", methods=['GET'])
@@ -131,14 +134,17 @@ def getUserByEmail():
 @app.route("/updateUser", methods=['POST'])
 @login_required
 def updateUser():
-    cur = mysql.connection.cursor()
-    cur.execute(
-        "UPDATE user SET firstName = %s, lastName = %s, email = %s, username = %s,  canton = %s WHERE id = %s",
-        [request.json['firstName'], request.json['lastName'], request.json['email'], request.json['username'],
-         request.json['canton'], request.json['id']], )
-    mysql.connection.commit()
-    cur.close()
-    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+    if '@' in request.json['username']:
+        return jsonify({'success': False}), 406
+    else:
+        cur = mysql.connection.cursor()
+        cur.execute(
+            "UPDATE user SET firstName = %s, lastName = %s, email = %s, username = %s,  canton = %s WHERE id = %s",
+            [request.json['firstName'], request.json['lastName'], request.json['email'], request.json['username'],
+             request.json['canton'], request.json['id']], )
+        mysql.connection.commit()
+        cur.close()
+        return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
 @app.route("/updateTextAudio", methods=['POST'])
