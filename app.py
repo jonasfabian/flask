@@ -2,8 +2,8 @@ import json
 from datetime import datetime
 from functools import wraps
 
-from flask import Flask, request, jsonify, send_from_directory, Response
 from flask import Flask, request, jsonify, send_from_directory, redirect
+from flask import Response
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_login import login_user, LoginManager
