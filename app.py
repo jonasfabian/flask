@@ -55,7 +55,10 @@ class User:
 @app.route("/login", methods=['POST'])
 def login():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM user WHERE email = %s", [request.json['email']])
+    if '@' in request.json['email']:
+        cur.execute("SELECT * FROM user WHERE email = %s", [request.json['email']])
+    else:
+        cur.execute("SELECT * FROM user WHERE username = %s", [request.json['email']])
     user = cur.fetchone()
     if user is not None:
         user = User(user['id'], user['email'], user['password'])
@@ -246,11 +249,12 @@ def getRecordingDataById():
     cur.close()
     return jsonify({'id': recording['id'], 'text': recording['text'], 'userId': recording['userId']})
 
+
 @app.route("/getAllRecordingData", methods=['GET'])
 @login_required
 def getAllRecordingData():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT id, text, userId FROM recordings",)
+    cur.execute("SELECT id, text, userId FROM recordings", )
     recording = cur.fetchall()
     cur.close()
     payload = []
