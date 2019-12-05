@@ -272,7 +272,7 @@ def getRecordingDataById():
 @login_required
 def getAllRecordingData():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT recordings.id, recordings.text, user.username FROM recordings JOIN user on user.id = recordings.userId", )
+    cur.execute("SELECT recordings.id, recordings.text, user.username, recordings.time FROM recordings JOIN user on user.id = recordings.userId", )
     recording = cur.fetchall()
     cur.close()
     payload = []
