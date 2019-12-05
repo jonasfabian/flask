@@ -187,6 +187,18 @@ def updateTextAudio():
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
+@app.route("/updateRecording", methods=['POST'])
+@login_required
+def updateRecording():
+    cur = mysql.connection.cursor()
+    cur.execute(
+        "UPDATE recordings SET recordings.text = %s WHERE recordings.id = %s", [request.json['text'],
+        request.json['id']])
+    mysql.connection.commit()
+    cur.close()
+    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+
+
 @app.route("/getTextAudios", methods=['GET'])
 @login_required
 def getTextAudios():
