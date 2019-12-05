@@ -130,6 +130,18 @@ def getUserByEmail():
     cur.close()
     return jsonify(result)
 
+@app.route("/getUserByUsername", methods=['GET'])
+def getUserByUsername():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM user WHERE username = %s", [request.args.get('email'), ])
+    result = cur.fetchone()
+    if result is not None:
+        result = {'id': result['id'], 'firstName': result['firstName'], 'lastName': result['lastName'],
+                  'email': result['email'], 'username': result['username'],
+                  'canton': result['canton']}
+    cur.close()
+    return jsonify(result)
+
 
 @app.route("/updateUser", methods=['POST'])
 @login_required
@@ -238,8 +250,8 @@ def getLabeledSums():
 def createRecording():
     cur = mysql.connection.cursor()
     data = json.loads(request.form['data'])
-    cur.execute("INSERT INTO recordings(text, userId, audio) VALUES(%s, %s, %s)",
-                [data['text'], data['userId'], request.files['file'].read(), ])
+    cur.execute("INSERT INTO recordings(text, userId, audio, time) VALUES(%s, %s, %s, %s)",
+                [data['text'], data['userId'], request.files['file'].read(), datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ])
     mysql.connection.commit()
     cur.close()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
@@ -260,7 +272,7 @@ def getRecordingDataById():
 @login_required
 def getAllRecordingData():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT id, text, userId FROM recordings", )
+    cur.execute("SELECT recordings.id, recordings.text, user.username FROM recordings JOIN user on user.id = recordings.userId", )
     recording = cur.fetchall()
     cur.close()
     payload = []

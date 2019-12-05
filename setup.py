@@ -67,6 +67,7 @@ def createTables():
         text MEDIUMTEXT CHARACTER SET utf8,
         userId INT NOT NULL,
         audio Mediumblob,
+        time TIMESTAMP,
         PRIMARY KEY (id)) ENGINE = INNODB DEFAULT CHARSET = UTF8MB4""")
 
     cursor.execute(
