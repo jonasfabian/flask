@@ -133,6 +133,7 @@ def createUser():
 
 
 @app.route("/getUserByEmail", methods=['GET'])
+@login_required
 def getUserByEmail():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM user WHERE email = %s", [request.args.get('email'), ])
@@ -146,6 +147,7 @@ def getUserByEmail():
 
 
 @app.route("/getUserByUsername", methods=['GET'])
+@login_required
 def getUserByUsername():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM user WHERE username = %s", [request.args.get('email'), ])
