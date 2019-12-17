@@ -83,6 +83,13 @@ def createTables():
         wrong BIGINT,
         PRIMARY KEY (id)) ENGINE = INNODB DEFAULT CHARSET = UTF8MB4""")
 
+    cursor.execute(
+        """CREATE TABLE IF NOT EXISTS score (
+        id BIGINT NOT NULL AUTO_INCREMENT,
+        userId FLOAT NOT NULL,
+        score BIGINT NOT NULL,
+        PRIMARY KEY (id)) ENGINE = INNODB DEFAULT CHARSET = UTF8MB4""")
+
 
 if __name__ == "__main__":
     dropDatabase()

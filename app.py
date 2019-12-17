@@ -116,6 +116,33 @@ def changePassword():
         return jsonify({'Authenticated': False}), 400
 
 
+@app.route("/createScore", methods=['POST'])
+@login_required
+def createScore():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT score FROM score WHERE userId = %s", [request.json['userId']])
+    currentScore = cur.fetchone()
+    if currentScore['score'] is None:
+        cur.execute("INSERT INTO score(userId, score) VALUES(%s, %s)", [request.json['userId'], request.json['score']])
+        mysql.connection.commit()
+    else:
+        if currentScore['score'] < request.json['score']:
+            cur.execute("UPDATE score set score = %s where userId = %s",
+                        [request.json['score'], request.json['userId']])
+            mysql.connection.commit()
+            cur.close()
+    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+
+
+@app.route("/getAllScores", methods=['GET'])
+@login_required
+def getAllScores():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM score")
+    currentScore = cur.fetchall()
+    return jsonify(currentScore), 200
+
+
 @app.route("/createUser", methods=['POST'])
 def createUser():
     if '@' in request.json['username']:
@@ -195,7 +222,7 @@ def updateRecording():
     cur = mysql.connection.cursor()
     cur.execute(
         "UPDATE recordings SET recordings.text = %s WHERE recordings.id = %s", [request.json['text'],
-        request.json['id']])
+                                                                                request.json['id']])
     mysql.connection.commit()
     cur.close()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}

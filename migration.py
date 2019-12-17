@@ -35,7 +35,6 @@ def extract_data_to_db(folderNumber: str):
         for textItem in text_item_list:
             if textItem.hasAttribute('speaker'):
                 for event in textItem.getElementsByTagName('event'):
-                    print(event.firstChild.nodeValue)
                     cursor.execute(
                         "INSERT INTO textAudio (audioStart, audioEnd, text, fileId, speaker, labeled, correct, wrong) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
                         (audio_time.get(event.attributes['start'].value), audio_time.get(event.attributes['end'].value),
