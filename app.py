@@ -138,7 +138,7 @@ def createScore():
 @login_required
 def getAllScores():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM score")
+    cur.execute("SELECT user.username, score.score FROM score join user on user.id = score.userId")
     currentScore = cur.fetchall()
     return jsonify(currentScore), 200
 
