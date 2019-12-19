@@ -122,7 +122,8 @@ def createScore():
     cur = mysql.connection.cursor()
     cur.execute("SELECT score FROM score WHERE userId = %s", [request.json['userId']])
     currentScore = cur.fetchone()
-    if currentScore['score'] is None:
+    print(currentScore)
+    if currentScore is None:
         cur.execute("INSERT INTO score(userId, score) VALUES(%s, %s)", [request.json['userId'], request.json['score']])
         mysql.connection.commit()
     else:
