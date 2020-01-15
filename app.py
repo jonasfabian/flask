@@ -165,6 +165,7 @@ def createUser():
 @login_required
 def getUserByEmail():
     cur = mysql.connection.cursor()
+    # TODO needs to be escaped in the frontend as else it will fail
     cur.execute("SELECT * FROM user WHERE email = %s", [request.args.get('email'), ])
     result = cur.fetchone()
     if result is not None:
@@ -179,6 +180,7 @@ def getUserByEmail():
 @login_required
 def getUserByUsername():
     cur = mysql.connection.cursor()
+    # TODO needs to be escaped in the frontend
     cur.execute("SELECT * FROM user WHERE username = %s", [request.args.get('email'), ])
     result = cur.fetchone()
     if result is not None:
@@ -273,7 +275,7 @@ def createUserAndTextAudio():
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
-@app.route("/getTopFive", methods=['GET', 'OPTIONS'])
+@app.route("/getTopFive", methods=['GET'])
 @login_required
 def getTopFive():
     cur = mysql.connection.cursor()
@@ -352,7 +354,7 @@ def getRecordingAudioById():
     return Response(audio['audio'], mimetype='audio/ogg')
 
 
-@app.route("/getAudio", methods=['GET', 'OPTIONS'])
+@app.route("/getAudio", methods=['GET'])
 @login_required
 def getAudio():
     return send_from_directory(os.path.join(baseDir, request.args.get('id')), 'audio.wav')
