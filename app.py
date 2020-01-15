@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import datetime
 from functools import wraps
 
@@ -354,7 +355,7 @@ def getRecordingAudioById():
 @app.route("/getAudio", methods=['GET', 'OPTIONS'])
 @login_required
 def getAudio():
-    return send_from_directory(baseDir + "\\" + request.args.get('id'), 'audio.wav')
+    return send_from_directory(os.path.join(baseDir, request.args.get('id')), 'audio.wav')
 
 
 @loginManager.user_loader
