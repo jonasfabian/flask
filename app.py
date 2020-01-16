@@ -1,9 +1,9 @@
 import json
+import os
 from datetime import datetime
 from functools import wraps
 
-from flask import Flask, request, jsonify, send_from_directory, redirect
-from flask import Response
+from flask import Flask, request, jsonify, send_from_directory, redirect, Response
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_login import login_user, LoginManager
@@ -272,7 +272,7 @@ def createUserAndTextAudio():
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
-@app.route("/getTopFive", methods=['GET', 'OPTIONS'])
+@app.route("/getTopFive", methods=['GET'])
 @login_required
 def getTopFive():
     cur = mysql.connection.cursor()
@@ -351,10 +351,10 @@ def getRecordingAudioById():
     return Response(audio['audio'], mimetype='audio/ogg')
 
 
-@app.route("/getAudio", methods=['GET', 'OPTIONS'])
+@app.route("/getAudio", methods=['GET'])
 @login_required
 def getAudio():
-    return send_from_directory(baseDir + "\\" + request.args.get('id'), 'audio.wav')
+    return send_from_directory(os.path.join(baseDir, request.args.get('id')), 'audio.wav')
 
 
 @loginManager.user_loader
