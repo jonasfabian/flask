@@ -1,12 +1,10 @@
 # Flask
-1. Start setup.py
-2. Start migration.py
-3. Start rest.py
+## Requirements
+* Python 3
+* Mariadb
+## Usage 
+1. run setup.py
+1. run migration.py
+1. run rest.py
 
-```console
-$ pip install -U spacy
-$ python -m spacy download en_core_web_sm
-$ python -m spacy download de_core_news_sm
-```
-
-PLEASE USE MARIADB FOR BEST RESULT
+see https://github.com/jonasfabian/labeling-tool for full description.

@@ -3,8 +3,7 @@ import os
 from datetime import datetime
 from functools import wraps
 
-from flask import Flask, request, jsonify, send_from_directory, redirect
-from flask import Response
+from flask import Flask, request, jsonify, send_from_directory, redirect, Response
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_login import login_user, LoginManager
@@ -165,7 +164,6 @@ def createUser():
 @login_required
 def getUserByEmail():
     cur = mysql.connection.cursor()
-    # TODO needs to be escaped in the frontend as else it will fail
     cur.execute("SELECT * FROM user WHERE email = %s", [request.args.get('email'), ])
     result = cur.fetchone()
     if result is not None:
@@ -180,7 +178,6 @@ def getUserByEmail():
 @login_required
 def getUserByUsername():
     cur = mysql.connection.cursor()
-    # TODO needs to be escaped in the frontend
     cur.execute("SELECT * FROM user WHERE username = %s", [request.args.get('email'), ])
     result = cur.fetchone()
     if result is not None:
