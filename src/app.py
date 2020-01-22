@@ -102,7 +102,7 @@ def login():
         if bcrypt.check_password_hash(user.password, request.json['password']):
             login_user(user)
             print("login: user logged in")
-            return jsonify({'Authenticated': True}), 200
+            return success()
     print("user not logged in")
     return jsonify({'Authenticated': False}), 401
 
@@ -175,7 +175,7 @@ def post_recording():
 def get_excerpt():
     cur = mysql.connection.cursor()
     # TODO limit based on what was already labeled by user or based on dialect .
-    cur.execute("SELECT * FROM excerpt WHERE skipped<3 AND private<1 LIMIT 1 ")
+    cur.execute("SELECT * FROM excerpt WHERE isSkipped<3 AND isPrivate<1 LIMIT 1 ")
     return jsonify(cur.fetchone())
 
 
@@ -189,7 +189,7 @@ def changePassword():
     if bcrypt.check_password_hash(oldPassword['password'], request.json['password']):
         cur.execute("UPDATE user set password = %s where user.id = %s", [newPassword, request.json['userId']])
         mysql.connection.commit()
-        return jsonify({'Authenticated': True}), 200
+        return success()
     else:
         return jsonify({'Authenticated': False}), 400
 
