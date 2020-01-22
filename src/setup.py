@@ -3,7 +3,7 @@ import mysql.connector
 from src.config import db_1_user, db_1_pw, database_1
 
 if __name__ == "__main__":
-    script = open("./src/setup_db.sql", "r+").read()
+    script = open("./setup_db.sql", "r+").read()
     dataBase = mysql.connector.connect(
         host='localhost',
         user=db_1_user,

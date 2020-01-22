@@ -12,3 +12,4 @@ class SpeechToTextDatastore:
             database=database_2
         )
         # dataBase.cursor().execute("")
+# TODO implement logic here

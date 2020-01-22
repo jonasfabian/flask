@@ -48,12 +48,13 @@ CREATE TABLE excerpt
 (
     id               BIGINT NOT NULL AUTO_INCREMENT,
     original_text_id BIGINT NOT NULL,
+    excerpt          TEXT   NOT NULL,
     skipped          INT     DEFAULT 0,
     private          BOOLEAN DEFAULT FALSE,
     PRIMARY KEY (id),
     FOREIGN KEY (original_text_id) REFERENCES original_text (id)
 );
-CREATE TABLE recordings
+CREATE TABLE recording
 (
     id         BIGINT NOT NULL AUTO_INCREMENT,
     excerpt_id BIGINT NOT NULL,

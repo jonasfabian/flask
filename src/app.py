@@ -72,6 +72,10 @@ class User:
         return self.group == group
 
 
+def success():
+    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+
+
 @app.errorhandler(404)
 def page_not_fond(e):
     return redirect("/speech-to-text-labeling-tool/app/index.html")
@@ -103,7 +107,6 @@ def login():
     return jsonify({'Authenticated': False}), 401
 
 
-# TODO this seems to work as expected
 def login_required(f):
     @wraps(f)
     def wrapped_view(**kwargs):
@@ -127,17 +130,53 @@ def login_required(f):
 
 @app.route("/api/user", methods=['GET'])
 @login_required
-def get_current_user():
-    print("aaa")
-    print(current_user)
+def get_user():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM user WHERE id = %s", [current_user.id])
     result = cur.fetchone()
     if result is not None:
-        print(result)
         result = {'id': result['id'], 'firstName': result['first_name'], 'lastName': result['last_name'],
                   'email': result['email'], 'username': result['username'], 'canton': result['canton']}
     return jsonify(result)
+
+
+@app.route("/api/user", methods=['POST'])
+def post_user():
+    # TODO not sure how to handle public registration logins
+    if '@' in request.json['username']:
+        return jsonify({'success': False}), 406
+    else:
+        pw = bcrypt.generate_password_hash(request.json['password']).decode('utf-8')
+        cur = mysql.connection.cursor()
+        # TODO add additional fields
+        cur.execute(
+            "INSERT INTO user(first_name, last_name, email, username,  password, canton) VALUES(%s, %s, %s, %s, %s, %s)",
+            [request.json['firstName'], request.json['lastName'], request.json['email'], request.json['username'],
+             pw, request.json['canton']])
+        mysql.connection.commit()
+        return success()
+
+
+@app.route("/api/recording", methods=['POST'])
+@login_required
+def post_recording():
+    cur = mysql.connection.cursor()
+    data = json.loads(request.form['data'])
+    cur.execute("INSERT INTO recording( user_id, excerpt_id,audio, time) VALUES(%s,%s,%s,%s)",
+                [current_user.id, data['excerpt_id'], request.files['file'].read(),
+                 datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ])
+    mysql.connection.commit()
+    return success()
+
+
+# TODO update method to reflect new architecture
+@app.route("/api/excerpt", methods=['GET'])
+@login_required
+def get_excerpt():
+    cur = mysql.connection.cursor()
+    # TODO limit based on what was already labeled by user or based on dialect .
+    cur.execute("SELECT * FROM excerpt WHERE skipped<3 AND private<1 LIMIT 1 ")
+    return jsonify(cur.fetchone())
 
 
 @app.route("/changePassword", methods=['POST'])
@@ -155,22 +194,6 @@ def changePassword():
         return jsonify({'Authenticated': False}), 400
 
 
-# TODO not sure how to handle public registration logins
-@app.route("/createUser", methods=['POST'])
-def createUser():
-    if '@' in request.json['username']:
-        return jsonify({'success': False}), 406
-    else:
-        pw = bcrypt.generate_password_hash(request.json['password']).decode('utf-8')
-        cur = mysql.connection.cursor()
-        cur.execute(
-            "INSERT INTO user(first_name, last_name, email, username,  password, canton) VALUES(%s, %s, %s, %s, %s, %s)",
-            [request.json['firstName'], request.json['lastName'], request.json['email'], request.json['username'],
-             pw, request.json['canton']])
-        mysql.connection.commit()
-        return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
-
-
 @app.route("/updateUser", methods=['POST'])
 @login_required
 def updateUser():
@@ -183,7 +206,7 @@ def updateUser():
             [request.json['firstName'], request.json['lastName'], request.json['email'], request.json['username'],
              request.json['canton'], request.json['id']], )
         mysql.connection.commit()
-        return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+        return success()
 
 
 # TODO change data structure so each user annotation is separated
@@ -196,7 +219,7 @@ def updateTextAudio():
         [request.json['audioStart'], request.json['audioEnd'], request.json['text'], request.json['labeled'],
          request.json['correct'], request.json['wrong'], request.json['id']], )
     mysql.connection.commit()
-    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+    return success()
 
 
 @app.route("/createUserAndTextAudio", methods=['POST'])
@@ -206,7 +229,7 @@ def createUserAndTextAudio():
     cur.execute("INSERT INTO user_and_text_audio(user_id, text_audio_id, time) VALUES(%s, %s, %s)",
                 [request.json['userId'], request.json['textAudioId'], datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ])
     mysql.connection.commit()
-    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+    return success()
 
 
 # TODO remove this method
@@ -218,7 +241,7 @@ def updateRecording():
     #     "UPDATE recordings SET recordings.text = %s WHERE recordings.id = %s", [request.json['text'],
     #                                                                             request.json['id']])
     mysql.connection.commit()
-    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+    return success()
 
 
 # TODO replace with view for aggregated data
@@ -282,24 +305,11 @@ def getLabeledSums():
 
 
 # TODO update method to reflect new architecture
-@app.route("/createRecording", methods=['POST'])
-@login_required
-def createRecording():
-    cur = mysql.connection.cursor()
-    data = json.loads(request.form['data'])
-    cur.execute("INSERT INTO recordings( user_id, audio, time) VALUES(%s,  %s, %s)",
-                [data['userId'], request.files['file'].read(),
-                 datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ])
-    mysql.connection.commit()
-    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
-
-
-# TODO update method to reflect new architecture
 @app.route("/getRecordingDataById", methods=['GET'])
 @login_required
 def getRecordingDataById():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT id,  user_id FROM recordings WHERE id = %s",
+    cur.execute("SELECT id,  user_id FROM recording WHERE id = %s",
                 [request.args.get('id')])
     recording = cur.fetchone()
     return jsonify({'id': recording['id'], 'text': 'TODO remove or replace', 'userId': recording['userId']})
@@ -311,7 +321,7 @@ def getRecordingDataById():
 def getAllRecordingData():
     cur = mysql.connection.cursor()
     cur.execute(
-        "SELECT recordings.id,  user.username, recordings.time FROM recordings JOIN user on user.id = recordings.user_id", )
+        "SELECT recording.id,  user.username, recording.time FROM recording JOIN user on user.id = recording.user_id", )
     recording = cur.fetchall()
     payload = []
     for record in recording:
@@ -323,7 +333,7 @@ def getAllRecordingData():
 @login_required
 def getRecordingAudioById():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT audio FROM recordings WHERE id = %s",
+    cur.execute("SELECT audio FROM recording WHERE id = %s",
                 [request.args.get('id')])
     audio = cur.fetchone()
     return Response(audio['audio'], mimetype='audio/ogg')
