@@ -10,7 +10,8 @@ from flask_login import login_user, LoginManager, current_user
 from flask_mysqldb import MySQL
 from flask_restful import Api
 
-from src.config import baseDir, user, passwd, database
+from src.config import baseDir, db_1_user, db_1_pw, database_1
+from src.speech_to_text_datastore import SpeechToTextDatastore
 
 app = Flask(__name__,
             static_folder='static/public/'
@@ -22,9 +23,9 @@ app.debug = True
 
 # Config MySQL
 app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = user
-app.config['MYSQL_PASSWORD'] = passwd
-app.config['MYSQL_DB'] = database
+app.config['MYSQL_USER'] = db_1_user
+app.config['MYSQL_PASSWORD'] = db_1_pw
+app.config['MYSQL_DB'] = database_1
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
 loginManager = LoginManager()
@@ -35,7 +36,7 @@ bcrypt = Bcrypt(app)
 CORS(app)
 
 mysql = MySQL(app)
-
+datastore = SpeechToTextDatastore()
 ACCESS_LEVEL = {
     'user': 0,
     'group_admin': 1,
@@ -49,6 +50,7 @@ class User:
         self.email = email
         self.password = password
         self.access = access
+        # NOTE this could be replaced with a dict once we have more than one group
         self.group = group
 
     def is_active(self):
@@ -95,7 +97,6 @@ def login():
         user = User(user['id'], user['email'], user['password'])
         if bcrypt.check_password_hash(user.password, request.json['password']):
             login_user(user)
-            # session['logged_in'] = True
             print("login: user logged in")
             return jsonify({'Authenticated': True}), 200
     print("user not logged in")
@@ -106,7 +107,6 @@ def login():
 def login_required(f):
     @wraps(f)
     def wrapped_view(**kwargs):
-        print("chekc user logged in")
         auth = request.authorization
         user = None
         if auth is not None:
@@ -116,11 +116,10 @@ def login_required(f):
         if user is not None:
             if bcrypt.check_password_hash(user['password'], auth.password):
                 user = User(user['id'], user['email'], user['password'])
-                print(" user logged in")
                 login_user(user)
-                print(" user logged in 2")
+                print("basic auth user checked")
                 return f(**kwargs)
-        print(" user not logged in")
+        print("basic auth unauthorized")
         return ('Unauthorized', 401, {'WWW-Authenticate': 'Basic realm="Login Required"'})
 
     return wrapped_view
@@ -187,6 +186,7 @@ def updateUser():
         return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
+# TODO change data structure so each user annotation is separated
 @app.route("/updateTextAudio", methods=['POST'])
 @login_required
 def updateTextAudio():
@@ -195,6 +195,16 @@ def updateTextAudio():
         "UPDATE text_audio SET audio_start = %s, audio_end = %s, text = %s, labeled = %s, correct = %s, wrong = %s WHERE id = %s",
         [request.json['audioStart'], request.json['audioEnd'], request.json['text'], request.json['labeled'],
          request.json['correct'], request.json['wrong'], request.json['id']], )
+    mysql.connection.commit()
+    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
+
+
+@app.route("/createUserAndTextAudio", methods=['POST'])
+@login_required
+def createUserAndTextAudio():
+    cur = mysql.connection.cursor()
+    cur.execute("INSERT INTO user_and_text_audio(user_id, text_audio_id, time) VALUES(%s, %s, %s)",
+                [request.json['userId'], request.json['textAudioId'], datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ])
     mysql.connection.commit()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
@@ -211,6 +221,7 @@ def updateRecording():
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
+# TODO replace with view for aggregated data
 @app.route("/getTextAudios", methods=['GET'])
 @login_required
 def getTextAudios():
@@ -239,16 +250,6 @@ def getTenNonLabeledTextAudios():
                    'wrong': vi['wrong']}
         payload.append(content)
     return jsonify(payload)
-
-
-@app.route("/createUserAndTextAudio", methods=['POST'])
-@login_required
-def createUserAndTextAudio():
-    cur = mysql.connection.cursor()
-    cur.execute("INSERT INTO user_and_text_audio(user_id, text_audio_id, time) VALUES(%s, %s, %s)",
-                [request.json['userId'], request.json['textAudioId'], datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ])
-    mysql.connection.commit()
-    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
 @app.route("/getTopFive", methods=['GET'])
