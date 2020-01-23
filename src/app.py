@@ -128,6 +128,7 @@ def login_required(f):
     return wrapped_view
 
 
+# TODO maybe convert betwen camel case and underscore see https://stackoverflow.com/questions/17156078/converting-identifier-naming-between-camelcase-and-underscores-during-json-seria
 @app.route("/api/user", methods=['GET'])
 @login_required
 def get_user():
@@ -135,10 +136,7 @@ def get_user():
     cur.execute("SELECT * FROM user WHERE id = %s", [current_user.id])
     result = cur.fetchone()
     if result is not None:
-        # TODO change once upload update functionality is ready
-        # TODO return everything minus password
-        result = {'id': result['id'], 'firstName': result['first_name'], 'lastName': result['last_name'],
-                  'email': result['email'], 'username': result['username'], 'canton': result['canton']}
+        del result['password']
     return jsonify(result)
 
 
@@ -159,16 +157,14 @@ def post_user():
     return success()
 
 
-# TODO update method to reflect new architecture
-# TODO add additional fields
 @app.route("/api/user", methods=['PUT'])
 @login_required
-def updateUser():
+def put_user():
     cur = mysql.connection.cursor()
     cur.execute(
-        "UPDATE user SET first_name = %s, last_name = %s, email = %s, username = %s,  canton = %s WHERE id = %s",
+        "UPDATE user SET first_name=%s,last_name=%s,email=%s,username=%s,canton=%s,licence=%s,sex=%s WHERE id=%s",
         [request.json['first_name'], request.json['last_name'], request.json['email'], request.json['username'],
-         request.json['canton'], current_user.id], )
+         request.json['canton'], request.json['licence'], request.json['sex'], current_user.id])
     mysql.connection.commit()
     return success()
 
@@ -176,15 +172,15 @@ def updateUser():
 # TODO update method to reflect new architecture
 # TODO this could also be done over the smae method as above?
 # TODO add additional fields
-@app.route("/changePassword", methods=['POST'])
+@app.route("/api/user/password", methods=['PUT'])
 @login_required
 def changePassword():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT password FROM user WHERE id = %s", [request.json['userId']])
-    oldPassword = cur.fetchone()
-    newPassword = bcrypt.generate_password_hash(request.json['newPassword'])
-    if bcrypt.check_password_hash(oldPassword['password'], request.json['password']):
-        cur.execute("UPDATE user set password = %s where user.id = %s", [newPassword, request.json['userId']])
+    cur.execute("SELECT password FROM user WHERE id = %s", [current_user.id])
+    old_password = cur.fetchone()
+    new_password = bcrypt.generate_password_hash(request.json['new_password'])
+    if bcrypt.check_password_hash(old_password['password'], request.json['password']):
+        cur.execute("UPDATE user set password = %s where user.id = %s", [new_password, current_user.id])
         mysql.connection.commit()
         return success()
     else:
