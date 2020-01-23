@@ -3,15 +3,15 @@ import os
 from datetime import datetime
 from functools import wraps
 
-from flask import Flask, request, jsonify, send_from_directory, redirect, Response, session
+from flask import Flask, request, jsonify, send_from_directory, redirect, Response
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_login import login_user, LoginManager, current_user
 from flask_mysqldb import MySQL
 from flask_restful import Api
 
-from src.config import baseDir, db_1_user, db_1_pw, database_1
-from src.speech_to_text_datastore import SpeechToTextDatastore
+from config import baseDir, db_1_user, db_1_pw, database_1
+from speech_to_text_datastore import SpeechToTextDatastore
 
 app = Flask(__name__,
             static_folder='static/public/'
@@ -76,6 +76,10 @@ def success():
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
+def forbidden():
+    return jsonify({'success': False}), 403, {'ContentType': 'application/json'}
+
+
 @app.errorhandler(404)
 def page_not_fond(e):
     return redirect("/speech-to-text-labeling-tool/app/index.html")
@@ -87,7 +91,6 @@ def forwardToAngular():
     return redirect("/speech-to-text-labeling-tool/app/index.html")
 
 
-# FIXME this does not do anything? see login_required
 @app.route("/login", methods=['POST'])
 def login():
     print("login: user logged in check")
@@ -123,7 +126,7 @@ def login_required(f):
                 print("basic auth user checked")
                 return f(**kwargs)
         print("basic auth unauthorized")
-        return ('Unauthorized', 401, {'WWW-Authenticate': 'Basic realm="Login Required"'})
+        return 'Unauthorized', 401, {'WWW-Authenticate': 'Basic realm="Login Required"'}
 
     return wrapped_view
 
@@ -169,9 +172,52 @@ def put_user():
     return success()
 
 
-# TODO update method to reflect new architecture
-# TODO this could also be done over the smae method as above?
-# TODO add additional fields
+@app.route("/api/user_group", methods=['POST'])
+@login_required
+def put_user_group():
+    if current_user.allowed_level(2):
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO user_group(name) VALUES (%s)", [request.json['name']])
+        mysql.connection.commit()
+        return success()
+    else:
+        return forbidden()
+
+
+@app.route("/api/user_groups", methods=['GET'])
+@login_required
+def get_user_groups():
+    if current_user.allowed_level(2):
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT * FROM user_group;")
+        return jsonify(cur.fetchall())
+    else:
+        return forbidden()
+
+
+@app.route("/api/user_group_role", methods=['POST'])
+@login_required
+def put_user_group_role():
+    if current_user.allowed_level(2):
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO user_group(name) VALUES (%s)", [request.json['name']])
+        mysql.connection.commit()
+        return success()
+    else:
+        return forbidden()
+
+
+@app.route("/api/user_group_role", methods=['GET'])
+@login_required
+def get_user_group_role():
+    if current_user.allowed_level(2):
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT * FROM user_group;")
+        return jsonify(cur.fetchall())
+    else:
+        return forbidden()
+
+
 @app.route("/api/user/password", methods=['PUT'])
 @login_required
 def changePassword():
@@ -208,19 +254,7 @@ def get_excerpt():
     return jsonify(cur.fetchone())
 
 
-# TODO change data structure so each user annotation is separated
-@app.route("/updateTextAudio", methods=['POST'])
-@login_required
-def updateTextAudio():
-    cur = mysql.connection.cursor()
-    cur.execute(
-        "UPDATE text_audio SET audio_start = %s, audio_end = %s, text = %s, labeled = %s, correct = %s, wrong = %s WHERE id = %s",
-        [request.json['audioStart'], request.json['audioEnd'], request.json['text'], request.json['labeled'],
-         request.json['correct'], request.json['wrong'], request.json['id']], )
-    mysql.connection.commit()
-    return success()
-
-
+# TODO use new architecture
 @app.route("/createUserAndTextAudio", methods=['POST'])
 @login_required
 def createUserAndTextAudio():
@@ -231,19 +265,8 @@ def createUserAndTextAudio():
     return success()
 
 
-# TODO remove this method
-@app.route("/updateRecording", methods=['POST'])
-@login_required
-def updateRecording():
-    cur = mysql.connection.cursor()
-    # cur.execute(
-    #     "UPDATE recordings SET recordings.text = %s WHERE recordings.id = %s", [request.json['text'],
-    #                                                                             request.json['id']])
-    mysql.connection.commit()
-    return success()
-
-
 # TODO replace with view for aggregated data
+# TODO maybe use paging
 @app.route("/getTextAudios", methods=['GET'])
 @login_required
 def getTextAudios():
@@ -263,6 +286,7 @@ def getTextAudios():
 @app.route("/getTenNonLabeledTextAudios", methods=['GET'])
 @login_required
 def getTenNonLabeledTextAudios():
+    # TODO get data from new datastore
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM text_audio where labeled = 0 group by id asc limit 10")
     rv = cur.fetchall()
@@ -276,77 +300,57 @@ def getTenNonLabeledTextAudios():
 
 
 # TODO update method to reflect new architecture
-@app.route("/getTopFive", methods=['GET'])
+@app.route("/getAudio", methods=['GET'])
 @login_required
-def getTopFive():
+def getAudio():
+    # TODO get data from new datastore
+    return send_from_directory(os.path.join(baseDir, request.args.get('id')), 'audio.wav')
+
+
+# TODO change data structure so each user annotation is separated
+# TODO only allow group admin to see this view
+@app.route("/updateTextAudio", methods=['POST'])
+@login_required
+def updateTextAudio():
     cur = mysql.connection.cursor()
     cur.execute(
-        "SELECT user.id, user.username, COUNT(user_and_text_audio.user_id) FROM user_and_text_audio JOIN user ON user.id = user_and_text_audio.user_id GROUP BY user.id LIMIT 5")
-    rv = cur.fetchall()
-    payload = []
-    for result in rv:
-        content = {'id': result['id'], 'username': result['username'],
-                   'count': result['COUNT(userAndTextAudio.userId)']}
-        payload.append(content)
-
-    return jsonify(payload)
+        "UPDATE text_audio SET audio_start = %s, audio_end = %s, text = %s, labeled = %s, correct = %s, wrong = %s WHERE id = %s",
+        [request.json['audioStart'], request.json['audioEnd'], request.json['text'], request.json['labeled'],
+         request.json['correct'], request.json['wrong'], request.json['id']], )
+    mysql.connection.commit()
+    return success()
 
 
-# TODO update method to reflect new architecture
-@app.route("/getLabeledSums", methods=['GET'])
+# TODO only allow group admin to see this view
+@app.route("/updateRecording", methods=['POST'])
 @login_required
-def getLabeledSums():
+def updateRecording():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT COUNT(id) FROM text_audio WHERE correct != 0")
-    correct = cur.fetchone()
-    cur.execute("SELECT COUNT(id) FROM text_audio WHERE wrong != 0")
-    wrong = cur.fetchone()
-    cur.execute("SELECT COUNT(id) FROM text_audio")
-    total = cur.fetchone()
-    return jsonify({'correct': correct['COUNT(id)'], 'wrong': wrong['COUNT(id)'], 'total': total['COUNT(id)']})
+    # cur.execute(
+    #     "UPDATE recordings SET recordings.text = %s WHERE recordings.id = %s", [request.json['text'],
+    #                                                                             request.json['id']])
+    mysql.connection.commit()
+    return success()
 
 
-# TODO update method to reflect new architecture
-@app.route("/getRecordingDataById", methods=['GET'])
-@login_required
-def getRecordingDataById():
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT id,  user_id FROM recording WHERE id = %s",
-                [request.args.get('id')])
-    recording = cur.fetchone()
-    return jsonify({'id': recording['id'], 'text': 'TODO remove or replace', 'userId': recording['userId']})
-
-
-# TODO update method to reflect new architecture
+# TODO only allow group admin to see this view
 @app.route("/getAllRecordingData", methods=['GET'])
 @login_required
 def getAllRecordingData():
     cur = mysql.connection.cursor()
     cur.execute(
-        "SELECT recording.id,  user.username, recording.time FROM recording JOIN user on user.id = recording.user_id", )
-    recording = cur.fetchall()
-    payload = []
-    for record in recording:
-        payload.append(record)
-    return jsonify(payload)
+        "SELECT recording.id,user.username,recording.time FROM recording JOIN user on user.id=recording.user_id")
+    return jsonify(cur.fetchall())
 
 
-# TODO update method to reflect new architecture
+# TODO only allow group admin to see this view
 @app.route("/getRecordingAudioById", methods=['GET'])
 @login_required
 def getRecordingAudioById():
     cur = mysql.connection.cursor()
-    cur.execute("SELECT audio FROM recording WHERE id = %s",
-                [request.args.get('id')])
+    cur.execute("SELECT audio FROM recording WHERE id=%s", [request.args.get('id')])
     audio = cur.fetchone()
     return Response(audio['audio'], mimetype='audio/ogg')
-
-
-# TODO update method to reflect new architecture
-@app.route("/getAudio", methods=['GET'])
-@login_required
-def getAudio():
-    return send_from_directory(os.path.join(baseDir, request.args.get('id')), 'audio.wav')
 
 
 @loginManager.user_loader
